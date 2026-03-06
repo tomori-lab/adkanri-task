@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #4f5b93;
+      --primary-hover: #5c6aa8;
+      --primary-light: rgba(79,91,147,0.15);
+      --success: #22c55e;
+      --success-light: rgba(34,197,94,0.1);
+      --danger: #f87171;
+      --bg: #0f1117;
+      --bg-card: #1a1d2e;
+      --bg-input: #242838;
+      --border: #2e3348;
+      --border-hover: #5c6aa8;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #3d4a7c, #4f5b93);
+      color: white;
+      padding: 20px 24px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(79,91,147,0.35);
+    }
+    .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    .header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+    }
+
+    .step { margin-bottom: 20px; }
+
+    .step-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .step-num {
+      background: var(--primary);
+      color: white;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-md); border-color: var(--border-hover); }
+
+    /* セレクト */
+    select, input[type="text"], input[type="number"], input[type="date"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg-input);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    select { background: var(--bg-input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 36px; }
+    select option { background: var(--bg-card); color: var(--text); }
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79,91,147,0.2);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* カテゴリ選択グリッド */
+    .category-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 480px) {
+      .category-grid { grid-template-columns: 1fr; }
+    }
+
+    .cat-btn {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .cat-btn:hover { border-color: var(--primary); background: var(--primary-light); color: var(--text); }
+    .cat-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: #8b9dc4;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(79,91,147,0.2);
+    }
+    .cat-btn .cat-icon { font-size: 20px; display: block; margin-bottom: 6px; }
+
+    /* サブカテゴリボタン */
+    .sub-category-list { display: flex; flex-direction: column; gap: 8px; }
+    .sub-btn {
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .sub-btn:hover { border-color: var(--primary); background: var(--primary-light); color: var(--text); }
+    .sub-btn.active { border-color: var(--primary); background: var(--primary-light); color: #8b9dc4; font-weight: 600; }
+
+    /* フィールド */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .field label .required {
+      color: var(--danger);
+      margin-left: 4px;
+      font-size: 12px;
+    }
+
+    /* 送信ボタン */
+    .submit-area { margin-top: 24px; }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #4f5b93, #5c6aa8);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(79,91,147,0.35);
+      letter-spacing: 0.5px;
+    }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(79,91,147,0.4); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled {
+      background: var(--border);
+      color: var(--text-dim);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ローディング */
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 完了画面 */
+    .success-screen {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+      color: var(--success);
+    }
+    .success-screen h2 { font-size: 22px; color: var(--text); margin-bottom: 8px; }
+    .success-screen p { color: var(--text-dim); font-size: 14px; margin-bottom: 4px; }
+    .success-id { font-family: monospace; color: #8b9dc4; font-weight: 600; font-size: 16px; }
+    .new-btn {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 14px 40px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .new-btn:hover { background: var(--primary-hover); box-shadow: 0 4px 16px rgba(79,91,147,0.35); }
+
+    .hidden { display: none !important; }
+
+    /* アニメーション */
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* エラー */
+    .error-msg {
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .field-error input, .field-error select, .field-error textarea {
+      border-color: var(--danger);
+    }
+
+    ::placeholder { color: var(--text-dim); }
+    ::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>TO アド管理依頼</h1>
+  <p>アド管理チームへの依頼フォーム</p>
+</div>
+
+<!-- ========== フォーム画面 ========== -->
+<div class="container" id="formScreen">
+
+  <!-- STEP 1: 氏名 -->
+  <div class="step">
+    <div class="step-label"><span class="step-num">1</span>氏名を選択</div>
+    <div class="card">
+      <div class="field">
+        <select id="nameSelect">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: 大分類 -->
+  <div class="step hidden" id="step2">
+    <div class="step-label"><span class="step-num">2</span>依頼内容を選択</div>
+    <div class="card">
+      <div class="category-grid" id="categoryGrid"></div>
+    </div>
+  </div>
+
+  <!-- STEP 3: 小分類 -->
+  <div class="step hidden" id="step3">
+    <div class="step-label"><span class="step-num">3</span>詳細カテゴリを選択</div>
+    <div class="card">
+      <div class="sub-category-list" id="subCategoryList"></div>
+    </div>
+  </div>
+
+  <!-- STEP 4: 詳細入力 -->
+  <div class="step hidden" id="step4">
+    <div class="step-label"><span class="step-num">4</span>詳細を入力</div>
+    <div class="card" id="detailFields"></div>
+  </div>
+
+  <!-- 送信ボタン -->
+  <div class="submit-area hidden" id="submitArea">
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">送信する</button>
+  </div>
+</div>
+
+<!-- ========== 完了画面 ========== -->
+<div class="container hidden" id="successScreen">
+  <div class="card success-screen">
+    <div class="success-icon">&#10003;</div>
+    <h2>依頼を送信しました</h2>
+    <p>チャットワークにタスク化されます</p>
+    <p class="success-id" id="requestId"></p>
+    <button class="new-btn" onclick="resetForm()">新しい依頼を作成</button>
+  </div>
+</div>
+
+<script>
+// ====================================================
+// データ定義
+// ====================================================
+
+const CATEGORIES = [
+  { id: 'account', label: 'アカウント関連（作成・紐づけ・エラー）', icon: '🔑' },
+  { id: 'link', label: 'リンク発行（ナハト・AXIS・DIO）', icon: '🔗' },
+  { id: 'spreadsheet', label: 'スプシ関連（精査用シート・分析シート・運用シート）', icon: '📊' },
+  { id: 'new_project', label: '新規案件', icon: '🆕' },
+  { id: 'new_offer', label: '新規オファー追加（アカ開設・単価登録・リンク発行などまとめて依頼）', icon: '📦' },
+  { id: 'price_change', label: '単価変更', icon: '💰' },
+  { id: 'csv_fix', label: 'CSV保管修正', icon: '📁' },
+  { id: 'cap_notify', label: 'キャップ通知依頼', icon: '🔔' },
+  { id: 'other', label: 'その他/エラー関連', icon: '❓' }
+];
+
+const SUB_CATEGORIES = {
+  account: [
+    { id: 'new_account', label: '新規アカウント開設依頼' },
+    { id: 'fb_page', label: 'FBページ作成依頼' },
+    { id: 'fb_pixel', label: 'FBピクセル紐づけ依頼' },
+    { id: 'fb_permission', label: 'FBアカウント・ページ権限付与依頼' },
+    { id: 'csv_link', label: '精査用シートCSV紐づけ依頼' },
+    { id: 'account_ban', label: 'アカBAN対応依頼' }
+  ],
+  link: [
+    { id: 'link_axis', label: 'リンク発行 @Axis商流(DIO以外)' },
+    { id: 'link_nahato', label: 'リンク発行 @nahato商流' },
+    { id: 'dio_new', label: '【DIO専用】新規リンク発行 @AXIS商流' },
+    { id: 'dio_add', label: '【DIO専用】既存リンク追加発行 @AXIS商流' },
+    { id: 'link_other', label: 'リンク格納・移行依頼、その他' }
+  ],
+  spreadsheet: [
+    { id: 'seisa_sheet', label: '精査用シート' },
+    { id: 'analysis_sheet', label: '分析用シート、運用シート' }
+  ],
+  new_project: [
+    { id: 'new_project_report', label: '新規案件開始報告' }
+  ],
+  other: [
+    { id: 'shukkou_miss', label: '出稿ミス共有' },
+    { id: 'other_general', label: 'その他' }
+  ]
+};
+
+const FIELDS = {
+  // アカウント関連
+  new_account: [
+    { id: 'type', label: '開設タイプ', type: 'select', options: ['新規開設', 'ストック作成'], required: true },
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
+    { id: 'quantity', label: '数量', type: 'number', required: true },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  fb_page: [
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'page_name', label: 'ページ名', type: 'text', required: true },
+    { id: 'permission', label: '権限（運用者）', type: 'text', required: false },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  fb_pixel: [
+    { id: 'bizmane', label: 'ビジマネ', type: 'select', options: ['Business01','Business02','Business03','Business04','Business05','Business06','Business07','Business08','Business09','Business10','Business11','Business12'], required: true },
+    { id: 'account', label: '紐づけ先アカウント', type: 'text', required: true },
+    { id: 'pixel', label: '紐づけるピクセル', type: 'text', required: true },
+    { id: 'deadline', label: '期限', type: 'text', required: false }
+  ],
+  fb_permission: [
+    { id: 'target_type', label: 'ページ OR アカウント', type: 'select', options: ['ページ', 'アカウント'], required: true },
+    { id: 'target_name', label: 'ページ名 / アカウント名', type: 'text', required: true },
+    { id: 'bizmane', label: 'ビジマネ', type: 'text', required: false },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  csv_link: [
+    { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
+    { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  account_ban: [
+    { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
+    { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
+    { id: 'noticed_date', label: '気づいた日', type: 'date', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+
+  // リンク発行
+  link_axis: [
+    { id: 'asp', label: 'ASP', type: 'select', options: ['エンターキー', 'ピアラ', 'ファンネル', 'その他'], required: true },
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'X', 'YT', 'LAP', 'その他'], required: true },
+    { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
+    { id: 'quantity', label: '本数', type: 'text', required: true },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  link_nahato: [
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'quantity', label: '本数', type: 'text', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  dio_new: [
+    { id: 'gender', label: '性別', type: 'select', options: ['男', '女', '男女'], required: true },
+    { id: 'cr_format', label: 'CRフォーマット', type: 'text', required: true },
+    { id: 'article_type', label: '記事種別', type: 'text', required: true },
+    { id: 'offer_name', label: 'オファー名(LP)', type: 'text', required: true },
+    { id: 'area', label: '地域', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'unit_price', label: '単価', type: 'text', required: true },
+    { id: 'link_number', label: 'リンク番号', type: 'text', required: false },
+    { id: 'quantity', label: '希望本数', type: 'text', required: true },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  dio_add: [
+    { id: 'project', label: '案件', type: 'text', required: true },
+    { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'quantity', label: '希望本数', type: 'text', required: true },
+    { id: 'ax_number', label: '該当番号（AX○○）', type: 'text', required: false },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  link_other: [
+    { id: 'detail', label: '詳細', type: 'textarea', required: true }
+  ],
+
+  // スプシ関連
+  seisa_sheet: [
+    { id: 'timing', label: '当日 or 前日', type: 'select', options: ['当日', '前日'], required: true },
+    { id: 'error_type', label: 'エラー内容', type: 'select', options: ['運用中のキャンペーンが出力されていない', 'キャンペーンのデータ(消化金額,imp,click)が間違っている', 'キャンペーンのMCV,CVが反映されていない', 'その他'], required: true },
+    { id: 'media', label: '媒体', type: 'text', required: false },
+    { id: 'account_name', label: 'アカウント名', type: 'text', required: false }
+  ],
+  analysis_sheet: [
+    { id: 'error_type', label: 'エラー内容', type: 'select', options: ['キャンペーンのデータ(消化金額,imp,click)が間違っている', 'キャンペーンのMCV,CVが反映されていない', 'その他'], required: true },
+    { id: 'date', label: '該当日', type: 'text', required: false },
+    { id: 'campaign', label: 'キャンペーン名', type: 'text', required: false }
+  ],
+
+  // 新規案件
+  new_project_report: [
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'asp', label: 'ASP', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'quantity', label: '数量', type: 'number', required: false },
+    { id: 'account_source', label: 'アカウント元', type: 'text', required: false },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+
+  // 新規オファー追加
+  new_offer: [
+    { id: 'request_item', label: '依頼事項', type: 'text', required: true },
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'page_name', label: 'ページ名', type: 'text', required: false },
+    { id: 'permission', label: '権限（運用者）', type: 'text', required: false },
+    { id: 'bizmane', label: '作ってほしいビジマネ', type: 'text', required: false },
+    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+
+  // 単価変更
+  price_change: [
+    { id: 'change_type', label: 'ピクセル関連/その他', type: 'select', options: ['ピクセル関連', 'その他'], required: true },
+    { id: 'asp', label: 'ASP', type: 'text', required: true },
+    { id: 'project', label: '案件名', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'deadline', label: '期日', type: 'text', required: false },
+    { id: 'detail', label: '詳細', type: 'textarea', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+
+  // CSV保管修正
+  csv_fix: [
+    { id: 'media', label: '媒体名', type: 'text', required: true },
+    { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
+    { id: 'campaign1', label: 'キャンペーン名①', type: 'text', required: true },
+    { id: 'campaign2', label: 'キャンペーン名②', type: 'text', required: false },
+    { id: 'campaign3', label: 'キャンペーン名③', type: 'text', required: false },
+    { id: 'occurred_date', label: '発生日', type: 'date', required: true }
+  ],
+
+  // キャップ通知依頼
+  cap_notify: [
+    { id: 'sheet_name', label: '該当のスプレッドシート名', type: 'text', required: true }
+  ],
+
+  // その他
+  shukkou_miss: [
+    { id: 'detail', label: '詳細', type: 'textarea', required: true }
+  ],
+  other_general: [
+    { id: 'detail', label: '詳細', type: 'textarea', required: true }
+  ]
+};
+
+// ====================================================
+// 状態管理
+// ====================================================
+
+let state = {
+  name: '',
+  categoryId: '',
+  categoryLabel: '',
+  subCategoryId: '',
+  subCategoryLabel: ''
+};
+
+// ====================================================
+// 初期化
+// ====================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadNames();
+  renderCategories();
+});
+
+function loadNames() {
+  google.script.run
+    .withSuccessHandler(function(names) {
+      const sel = document.getElementById('nameSelect');
+      names.forEach(function(n) {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        sel.appendChild(opt);
+      });
+    })
+    .withFailureHandler(function() {
+      // フォールバック：ハードコード
+      const fallback = ['後藤 幹雄','米沢 祐輝','内海 翔太','杉本 楓','工内 優雅','萬木 真人','二関 颯太','横山 龍','大原 龍太郎','松本 陸','吉永 健人','中田 悠太','安部 勇之介','田村 遥奈','庄司 一平','中村 航','木口 史也','鹿島 圭市','菅野 太一','岩﨑 麻衣花','田中 隆之介','古木 海翔','白井 和希','松﨑 陽紀','穂積 正弥','筒井 はな乃','西村 知輝','臼倉 駿太','寒竹 由稀','高木 優希','大野 健太','加藤 萌々','小堂 陽人','山崎 涼太郎'];
+      const sel = document.getElementById('nameSelect');
+      fallback.forEach(function(n) {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        sel.appendChild(opt);
+      });
+    })
+    .getNames();
+}
+
+// ====================================================
+// カテゴリ描画
+// ====================================================
+
+function renderCategories() {
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = '';
+  CATEGORIES.forEach(function(cat) {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.innerHTML = '<span class="cat-icon">' + cat.icon + '</span>' + cat.label;
+    btn.onclick = function() { selectCategory(cat); };
+    btn.dataset.id = cat.id;
+    grid.appendChild(btn);
+  });
+}
+
+// ====================================================
+// 氏名選択
+// ====================================================
+
+document.getElementById('nameSelect').addEventListener('change', function() {
+  state.name = this.value;
+  if (this.value) {
+    show('step2');
+  } else {
+    hide('step2'); hide('step3'); hide('step4'); hide('submitArea');
+  }
+});
+
+// ====================================================
+// 大分類選択
+// ====================================================
+
+function selectCategory(cat) {
+  state.categoryId = cat.id;
+  state.categoryLabel = cat.label;
+  state.subCategoryId = '';
+  state.subCategoryLabel = '';
+
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('[data-id="' + cat.id + '"]').classList.add('active');
+
+  const subs = SUB_CATEGORIES[cat.id];
+
+  if (subs && subs.length > 1) {
+    renderSubCategories(subs);
+    show('step3');
+    hide('step4');
+    hide('submitArea');
+  } else if (subs && subs.length === 1) {
+    hide('step3');
+    selectSubCategory(subs[0]);
+  } else {
+    hide('step3');
+    const fieldKey = cat.id;
+    if (FIELDS[fieldKey]) {
+      state.subCategoryId = fieldKey;
+      state.subCategoryLabel = '';
+      renderFields(FIELDS[fieldKey]);
+      show('step4');
+      show('submitArea');
+    } else {
+      hide('step4');
+      hide('submitArea');
+    }
+  }
+}
+
+// ====================================================
+// 小分類選択
+// ====================================================
+
+function renderSubCategories(subs) {
+  const list = document.getElementById('subCategoryList');
+  list.innerHTML = '';
+  subs.forEach(function(sub) {
+    const btn = document.createElement('button');
+    btn.className = 'sub-btn';
+    btn.textContent = sub.label;
+    btn.dataset.id = sub.id;
+    btn.onclick = function() { selectSubCategory(sub); };
+    list.appendChild(btn);
+  });
+}
+
+function selectSubCategory(sub) {
+  state.subCategoryId = sub.id;
+  state.subCategoryLabel = sub.label;
+
+  document.querySelectorAll('.sub-btn').forEach(function(b) { b.classList.remove('active'); });
+  const active = document.querySelector('.sub-btn[data-id="' + sub.id + '"]');
+  if (active) active.classList.add('active');
+
+  const fields = FIELDS[sub.id];
+  if (fields) {
+    renderFields(fields);
+    show('step4');
+    show('submitArea');
+  }
+}
+
+// ====================================================
+// フィールド描画
+// ====================================================
+
+function renderFields(fields) {
+  const container = document.getElementById('detailFields');
+  container.innerHTML = '';
+  container.classList.add('fade-in');
+
+  fields.forEach(function(f) {
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.id = 'field-' + f.id;
+
+    const label = document.createElement('label');
+    label.setAttribute('for', 'input-' + f.id);
+    label.innerHTML = f.label + (f.required ? '<span class="required">*</span>' : '');
+    div.appendChild(label);
+
+    let input;
+    if (f.type === 'select') {
+      input = document.createElement('select');
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = '選択してください';
+      input.appendChild(empty);
+      f.options.forEach(function(opt) {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        input.appendChild(o);
+      });
+    } else if (f.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.placeholder = f.label + 'を入力';
+    } else {
+      input = document.createElement('input');
+      input.type = f.type || 'text';
+      input.placeholder = f.label + 'を入力';
+    }
+
+    input.id = 'input-' + f.id;
+    input.dataset.label = f.label;
+    input.dataset.required = f.required ? 'true' : 'false';
+    div.appendChild(input);
+    container.appendChild(div);
+  });
+}
+
+// ====================================================
+// バリデーション
+// ====================================================
+
+function validate() {
+  let valid = true;
+
+  document.querySelectorAll('.error-msg').forEach(function(e) { e.remove(); });
+  document.querySelectorAll('.field-error').forEach(function(e) { e.classList.remove('field-error'); });
+
+  if (!state.name) { valid = false; }
+  if (!state.categoryId) { valid = false; }
+
+  const inputs = document.querySelectorAll('#detailFields input, #detailFields select, #detailFields textarea');
+  inputs.forEach(function(inp) {
+    if (inp.dataset.required === 'true' && (!inp.value || inp.value.trim() === '')) {
+      valid = false;
+      const field = inp.closest('.field');
+      field.classList.add('field-error');
+      const err = document.createElement('div');
+      err.className = 'error-msg';
+      err.textContent = inp.dataset.label + 'は必須です';
+      field.appendChild(err);
+    }
+  });
+
+  return valid;
+}
+
+// ====================================================
+// 送信
+// ====================================================
+
+function handleSubmit() {
+  if (!validate()) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>送信中...';
+
+  const fields = [];
+  const inputs = document.querySelectorAll('#detailFields input, #detailFields select, #detailFields textarea');
+  inputs.forEach(function(inp) {
+    fields.push({ label: inp.dataset.label, value: inp.value });
+  });
+
+  const formData = {
+    name: state.name,
+    category: state.categoryLabel,
+    subCategory: state.subCategoryLabel,
+    fields: fields
+  };
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        document.getElementById('requestId').textContent = result.id;
+        hide('formScreen');
+        show('successScreen');
+      } else {
+        alert('送信に失敗しました: ' + (result.error || '不明なエラー'));
+        btn.disabled = false;
+        btn.textContent = '送信する';
+      }
+    })
+    .withFailureHandler(function(err) {
+      alert('通信エラー: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '送信する';
+    })
+    .submitRequest(formData);
+}
+
+// ====================================================
+// リセット
+// ====================================================
+
+function resetForm() {
+  state = { name: '', categoryId: '', categoryLabel: '', subCategoryId: '', subCategoryLabel: '' };
+  document.getElementById('nameSelect').value = '';
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  hide('step2'); hide('step3'); hide('step4'); hide('submitArea');
+  document.getElementById('detailFields').innerHTML = '';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = '送信する';
+  hide('successScreen');
+  show('formScreen');
+}
+
+// ====================================================
+// ユーティリティ
+// ====================================================
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+</body>
+</html>
