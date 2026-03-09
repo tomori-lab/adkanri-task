@@ -2,6 +2,12 @@
 
 アド管理チームへの依頼をWebフォームで受け付け、チャットワークにタスク化し、進捗を管理するGAS Webアプリ。**スプシ不要**。**AXISアドレスのみ利用可能**。
 
+## リダイレクトURL（adkanri-task.netlify.app）
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/tomori-lab/adkanri-task)
+
+↑ クリックで Netlify にデプロイ。サイト名を `adkanri-task` にすると **https://adkanri-task.netlify.app** でアクセス可能。
+
 ## 機能
 
 - **依頼者名**：ログイン中のGoogleメールアドレスをそのまま依頼者名に使用（AXISアドレスのみ許可）
