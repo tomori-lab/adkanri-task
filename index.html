@@ -384,7 +384,6 @@ const FIELDS = {
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
   fb_pixel: [
-    { id: 'bizmane', label: 'ビジマネ', type: 'select', options: ['Business01','Business02','Business03','Business04','Business05','Business06','Business07','Business08','Business09','Business10','Business11','Business12'], required: true },
     { id: 'account', label: '紐づけ先アカウント', type: 'text', required: true },
     { id: 'pixel', label: '紐づけるピクセル', type: 'text', required: true },
     { id: 'deadline', label: '期限', type: 'text', required: false }
@@ -392,7 +391,6 @@ const FIELDS = {
   fb_permission: [
     { id: 'target_type', label: 'ページ OR アカウント', type: 'select', options: ['ページ', 'アカウント'], required: true },
     { id: 'target_name', label: 'ページ名 / アカウント名', type: 'text', required: true },
-    { id: 'bizmane', label: 'ビジマネ', type: 'text', required: false },
     { id: 'deadline', label: '期限', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
@@ -409,6 +407,7 @@ const FIELDS = {
     { id: 'project', label: '案件名', type: 'text', required: true },
     { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'X', 'YT', 'LAP', 'その他'], required: true },
     { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
+    { id: 'lp', label: 'LP', type: 'text', required: false },
     { id: 'quantity', label: '本数', type: 'text', required: true },
     { id: 'deadline', label: '期限', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
@@ -416,10 +415,10 @@ const FIELDS = {
 
   // スプシ関連（サブカテゴリなし・直接フィールド表示）
   spreadsheet: [
+    { id: 'sheet_name', label: 'シート名', type: 'text', required: true },
     { id: 'error_type', label: 'エラー内容', type: 'select', options: ['運用中のキャンペーンが出力されていない', 'キャンペーンのデータ(消化金額,imp,click)が間違っている', 'キャンペーンのMCV,CVが反映されていない', 'その他'], required: true },
     { id: 'media', label: '媒体', type: 'text', required: false },
     { id: 'account_name', label: 'アカウント名', type: 'text', required: false },
-    { id: 'sheet_name', label: 'シート名', type: 'text', required: true },
     { id: 'cell_url', label: '該当セルURL', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
@@ -429,8 +428,9 @@ const FIELDS = {
     { id: 'project', label: '案件名', type: 'text', required: true },
     { id: 'asp', label: 'ASP', type: 'text', required: true },
     { id: 'media', label: '媒体', type: 'text', required: true },
-    { id: 'quantity', label: '数量', type: 'number', required: false },
-    { id: 'account_source', label: 'アカウント元', type: 'text', required: false },
+    { id: 'lp', label: 'LP', type: 'text', required: false },
+    { id: 'link_count', label: 'リンク本数', type: 'text', required: false },
+    { id: 'unit_price', label: '単価', type: 'text', required: false },
     { id: 'deadline', label: '期限', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
@@ -577,17 +577,21 @@ function selectCategory(cat) {
   document.querySelector('[data-id="' + cat.id + '"]').classList.add('active');
 
   const subs = SUB_CATEGORIES[cat.id];
+  var stepNum = document.querySelector('#step3 .step-num');
 
   if (subs && subs.length > 1) {
     renderSubCategories(subs);
     show('step2');
     hide('step3');
     hide('submitArea');
+    if (stepNum) stepNum.textContent = '3';
   } else if (subs && subs.length === 1) {
     hide('step2');
+    if (stepNum) stepNum.textContent = '3';
     selectSubCategory(subs[0]);
   } else {
     hide('step2');
+    if (stepNum) stepNum.textContent = '2';
     const fieldKey = cat.id;
     if (FIELDS[fieldKey]) {
       state.subCategoryId = fieldKey;
