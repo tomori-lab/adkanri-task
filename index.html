@@ -278,7 +278,7 @@ if (window.top === window.self) {
 <div class="header">
   <h1>TO アド管理依頼</h1>
   <p>アド管理チームへの依頼フォーム</p>
-  <p id="currentUser" style="font-size:12px;opacity:0.9;margin-top:6px;"></p>
+  <p id="currentUser" style="font-size:12px;opacity:0.9;margin-top:6px;display:none;"></p>
 </div>
 
 <div class="app-body">
@@ -554,23 +554,32 @@ function loadCurrentUser() {
   google.script.run
     .withSuccessHandler(function(user) {
       state.currentUser = user;
-      const el = document.getElementById('currentUser');
-      if (el) {
-        if (user.allowed === false) {
-          if (user.reason === 'no_email') {
-            el.textContent = '依頼者: ログインが必要です。「権限を確認」→「許可」を押してからページを再読み込みしてください';
-          } else {
-            el.textContent = '依頼者: AXIS・shibuya-ad.com のアドレスのみ利用可能です';
-          }
-          el.style.color = 'var(--danger)';
+      var text = '';
+      var error = false;
+      if (user.allowed === false) {
+        error = true;
+        if (user.reason === 'no_email') {
+          text = '依頼者: ログインが必要です。「権限を確認」→「許可」を押してからページを再読み込みしてください';
         } else {
-          el.textContent = '依頼者: ' + (user.name || user.email || '読み込み中...');
-          el.style.color = '';
+          text = '依頼者: AXIS・shibuya-ad.com のアドレスのみ利用可能です';
         }
+      } else {
+        text = '依頼者: ' + (user.name || user.email || '');
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: text, error: error }, '*');
+      }
+      var el = document.getElementById('currentUser');
+      if (el) {
+        el.textContent = text;
+        el.style.color = error ? 'var(--danger)' : '';
       }
     })
     .withFailureHandler(function() {
-      const el = document.getElementById('currentUser');
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: '依頼者: 取得できません。権限を許可してからページを再読み込みしてください', error: true }, '*');
+      }
+      var el = document.getElementById('currentUser');
       if (el) el.textContent = '依頼者: 取得できません。権限を許可してからページを再読み込みしてください';
     })
     .getCurrentUser();

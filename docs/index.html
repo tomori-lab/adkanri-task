@@ -18,11 +18,21 @@
       background: #1e293b;
       border-bottom: 1px solid #334155;
       padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
     .app-header h1 {
       font-size: 15px;
       font-weight: 600;
       color: #f1f5f9;
+    }
+    .app-header .requester {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .app-header .requester.error {
+      color: #f87171;
     }
     .app-layout {
       display: flex;
@@ -174,6 +184,7 @@
 
 <header class="app-header">
   <h1>TOアド管理ツール</h1>
+  <span id="headerRequester" class="requester"></span>
 </header>
 
 <div class="app-layout">
@@ -220,6 +231,17 @@
 <script>
 (function() {
   const DASHBOARD_URL = typeof window.DASHBOARD_URL !== 'undefined' ? window.DASHBOARD_URL : '';
+
+  // GAS iframe から依頼者情報を受信してヘッダーに表示
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'ADKANRI_REQUESTER') {
+      const el = document.getElementById('headerRequester');
+      if (el) {
+        el.textContent = e.data.text || '';
+        el.className = 'requester' + (e.data.error ? ' error' : '');
+      }
+    }
+  });
 
   const tabs = document.querySelectorAll('.tab');
   const panels = document.querySelectorAll('.panel');
