@@ -566,20 +566,10 @@ function loadCurrentUser() {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: text, error: error }, '*');
       }
-      var el = document.getElementById('currentUser');
-      if (el) {
-        el.textContent = text;
-        el.className = 'header-requester' + (error ? ' error' : '');
-      }
     })
     .withFailureHandler(function() {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: '依頼者: 取得できません。権限を許可してからページを再読み込みしてください', error: true }, '*');
-      }
-      var el = document.getElementById('currentUser');
-      if (el) {
-        el.textContent = '依頼者: 取得できません。権限を許可してからページを再読み込みしてください';
-        el.className = 'header-requester error';
       }
     })
     .getCurrentUser();
