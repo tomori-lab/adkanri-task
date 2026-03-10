@@ -1,15 +1,15 @@
 // ====================================================
 // TOアド管理依頼ツール v2 - サーバーサイド
-// AXISアドレスのみ / メールアドレスを依頼者名に / スプシ不要
+// AXIS・shibuya-ad.com のアドレスで依頼可能 / ログインアドレスを依頼者名に自動設定
 // ====================================================
 
-// ※ デプロイは「ユーザーとして実行」にすること
+// ※ デプロイは「ユーザーとして実行」にすること（これでログイン中のメールアドレスが取得できる）
 // ※ 機密情報は「スクリプト プロパティ」で設定（プロジェクトの設定 → スクリプト プロパティ）
 
 // スクリプト プロパティで設定するキー:
 //   CHATWORK_API_TOKEN, CHATWORK_ROOM_ID, ALL_USER_IDS, ASSIGN_MAP_JSON
 
-// 許可するメールドメイン（変更する場合はここを編集）
+// 許可するメールドメイン（ログイン・依頼可能）
 const ALLOWED_EMAIL_DOMAINS = ['axis-ads.co.jp', 'axis-hd.co.jp', 'shibuya-ad.com'];
 
 const REQ_PREFIX = 'REQ-ID:';
@@ -47,8 +47,11 @@ function getCurrentUser() {
   const domain = email.indexOf('@') >= 0 ? email.split('@')[1].toLowerCase() : '';
   const allowed = ALLOWED_EMAIL_DOMAINS.some(function(d) { return domain === d.toLowerCase(); });
 
-  if (!allowed || !email) {
-    return { email: '', name: '', allowed: false };
+  if (!email) {
+    return { email: '', name: '', allowed: false, reason: 'no_email' };
+  }
+  if (!allowed) {
+    return { email: '', name: '', allowed: false, reason: 'domain_not_allowed' };
   }
 
   // アドレスをそのまま依頼者名に使用
@@ -63,7 +66,7 @@ function submitRequest(formData) {
   try {
     const user = getCurrentUser();
     if (!user.allowed) {
-      return { success: false, error: 'AXISアドレスでのみ依頼できます。' };
+      return { success: false, error: 'AXIS・shibuya-ad.com のアドレスでのみ依頼できます。' };
     }
     formData.name = user.email;
 

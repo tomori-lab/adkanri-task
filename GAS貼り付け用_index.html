@@ -591,7 +591,11 @@ function loadCurrentUser() {
       const el = document.getElementById('currentUser');
       if (el) {
         if (user.allowed === false) {
-          el.textContent = '依頼者: AXISアドレスのみ利用可能です';
+          if (user.reason === 'no_email') {
+            el.textContent = '依頼者: ログインが必要です。「権限を確認」→「許可」を押してからページを再読み込みしてください';
+          } else {
+            el.textContent = '依頼者: AXIS・shibuya-ad.com のアドレスのみ利用可能です';
+          }
           el.style.color = 'var(--danger)';
         } else {
           el.textContent = '依頼者: ' + (user.name || user.email || '読み込み中...');
@@ -600,7 +604,8 @@ function loadCurrentUser() {
       }
     })
     .withFailureHandler(function() {
-      document.getElementById('currentUser').textContent = '依頼者: 取得できません（要ログイン）';
+      const el = document.getElementById('currentUser');
+      if (el) el.textContent = '依頼者: 取得できません。権限を許可してからページを再読み込みしてください';
     })
     .getCurrentUser();
 }
@@ -775,7 +780,7 @@ function validate() {
       err.className = 'error-msg current-user-error';
       err.style.marginBottom = '16px';
       err.textContent = state.currentUser && state.currentUser.allowed === false
-        ? 'AXISアドレス（@axis-ads.co.jp 等）でログインしてください。'
+        ? 'AXIS・shibuya-ad.com のアドレスでログインしてください。'
         : '依頼者情報が取得できません。デプロイを「ユーザーとして実行」に設定してください。';
       container.insertBefore(err, container.firstChild);
     }
