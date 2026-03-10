@@ -231,15 +231,34 @@
 <script>
 (function() {
   const DASHBOARD_URL = typeof window.DASHBOARD_URL !== 'undefined' ? window.DASHBOARD_URL : '';
+  const GAS_BASE = 'https://script.google.com/a/macros/shibuya-ad.com/s/AKfycbwuuoXgV1rlzxw9gM4GPdK9bamJmVcktnXv9iDoRcdPUbKwRoJoojMqtIjpvxDqY-o/exec';
 
-  // GAS iframe から依頼者情報を受信してヘッダーに表示
+  function setHeaderRequester(text, error) {
+    const el = document.getElementById('headerRequester');
+    if (el) {
+      el.textContent = text || '';
+      el.className = 'requester' + (error ? ' error' : '');
+    }
+  }
+
+  // JSONP で依頼者を取得（postMessage のフォールバック）
+  window.adkanriRequester = function(text) {
+    if (typeof text === 'string' && text.length) {
+      setHeaderRequester(text, text.indexOf('ログインが必要') >= 0 || text.indexOf('のみ利用可能') >= 0 || text.indexOf('取得できません') >= 0);
+    }
+  };
+
+  (function loadRequester() {
+    var s = document.createElement('script');
+    s.src = GAS_BASE + '?getUser=1&callback=adkanriRequester';
+    s.onerror = function() { setHeaderRequester('依頼者: 取得できません', true); };
+    document.head.appendChild(s);
+  })();
+
+  // GAS iframe から依頼者情報を受信（postMessage があれば上書き）
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'ADKANRI_REQUESTER') {
-      const el = document.getElementById('headerRequester');
-      if (el) {
-        el.textContent = e.data.text || '';
-        el.className = 'requester' + (e.data.error ? ' error' : '');
-      }
+      setHeaderRequester(e.data.text || '', e.data.error);
     }
   });
 

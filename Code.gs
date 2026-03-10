@@ -30,7 +30,22 @@ function getConfig() {
   };
 }
 
-function doGet() {
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.getUser === '1') {
+    var u = getCurrentUser();
+    var text = '';
+    if (u.allowed) {
+      text = '依頼者: ' + (u.name || u.email || '');
+    } else if (u.reason === 'no_email') {
+      text = '依頼者: ログインが必要です。「権限を確認」→「許可」を押してからページを再読み込みしてください';
+    } else {
+      text = '依頼者: AXIS・shibuya-ad.com のアドレスのみ利用可能です';
+    }
+    var cb = p.callback || 'adkanriRequester';
+    var js = cb + '(' + JSON.stringify(text) + ')';
+    return ContentService.createTextOutput(js).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('TOアド管理依頼')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
