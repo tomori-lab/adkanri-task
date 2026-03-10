@@ -1,10 +1,32 @@
 <!DOCTYPE html>
-<!-- v2-nosidebar: 内側サイドバー削除版 -->
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GAS 貼り付け用 - コピー</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #1e293b; color: #f1f5f9; padding: 16px; }
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .btn:hover { background: #2563eb; }
+    .btn.done { background: #22c55e; }
+    .hint { font-size: 13px; color: #94a3b8; }
+    #content { width: 100%; height: calc(100vh - 80px); font-family: Consolas, monospace; font-size: 12px; padding: 12px; background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; resize: none; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="copyBtn">クリップボードにコピー</button>
+    <span class="hint">→ script.google.com で Index.html を開き、全選択(Ctrl+A)してから貼り付け(Ctrl+V)</span>
+  </div>
+  <textarea id="content" readonly>&lt;!DOCTYPE html&gt;
+&lt;!-- v2-nosidebar: 内側サイドバー削除版 --&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;style&gt;
     /* ダークテーマ・コンパクト */
     :root {
       --primary: #60a5fa;
@@ -47,7 +69,6 @@
     .header h1 .header-requester { font-size: 12px; font-weight: 400; color: var(--text-muted); }
     .header h1 .header-requester.error { color: var(--danger); }
     .header p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .header #currentUser { font-size: 11px; color: var(--text-dim); }
 
     .container {
       max-width: 640px;
@@ -265,71 +286,71 @@
     .task-row select { padding: 5px 6px; font-size: 11px; width: auto; min-width: 80px; }
     .task-row .btn-update { padding: 5px 10px; font-size: 11px; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; }
     .task-row .btn-update:hover { background: var(--primary-hover); }
-  </style>
-</head>
-<body>
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
 
-<script>
+&lt;script&gt;
 // 直接GASのURLを開いた場合は Netlify にリダイレクト（アドレスバーを自社URLに）
 if (window.top === window.self) {
   window.location.replace('https://axis-ad.github.io/adkanri-task/');
-  document.body.innerHTML = '<div style="font-family:sans-serif;text-align:center;padding:40px;color:#64748b;">リダイレクト中...</div>';
+  document.body.innerHTML = '&lt;div style="font-family:sans-serif;text-align:center;padding:40px;color:#64748b;"&gt;リダイレクト中...&lt;/div&gt;';
 }
-</script>
+&lt;/script&gt;
 
-<div class="header">
-  <h1>TO アド管理依頼 <span id="currentUser" class="header-requester"></span></h1>
-  <p>アド管理チームへの依頼フォーム</p>
-</div>
+&lt;div class="header"&gt;
+  &lt;h1&gt;TO アド管理依頼 &lt;span id="currentUser" class="header-requester"&gt;&lt;/span&gt;&lt;/h1&gt;
+  &lt;p&gt;アド管理チームへの依頼フォーム&lt;/p&gt;
+&lt;/div&gt;
 
-<div class="app-body">
-  <div class="main-content">
-<!-- ========== フォーム画面 ========== -->
-<div class="container" id="formScreen">
+&lt;div class="app-body"&gt;
+  &lt;div class="main-content"&gt;
+&lt;!-- ========== フォーム画面 ========== --&gt;
+&lt;div class="container" id="formScreen"&gt;
 
-  <!-- STEP 1: 大分類 -->
-  <div class="step" id="step1">
-    <div class="step-label"><span class="step-num">1</span>依頼内容を選択</div>
-    <div class="card">
-      <div class="category-grid" id="categoryGrid"></div>
-    </div>
-  </div>
+  &lt;!-- STEP 1: 大分類 --&gt;
+  &lt;div class="step" id="step1"&gt;
+    &lt;div class="step-label"&gt;&lt;span class="step-num"&gt;1&lt;/span&gt;依頼内容を選択&lt;/div&gt;
+    &lt;div class="card"&gt;
+      &lt;div class="category-grid" id="categoryGrid"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
 
-  <!-- STEP 2: 小分類 -->
-  <div class="step hidden" id="step2">
-    <div class="step-label"><span class="step-num">2</span>詳細カテゴリを選択</div>
-    <div class="card">
-      <div class="sub-category-list" id="subCategoryList"></div>
-    </div>
-  </div>
+  &lt;!-- STEP 2: 小分類 --&gt;
+  &lt;div class="step hidden" id="step2"&gt;
+    &lt;div class="step-label"&gt;&lt;span class="step-num"&gt;2&lt;/span&gt;詳細カテゴリを選択&lt;/div&gt;
+    &lt;div class="card"&gt;
+      &lt;div class="sub-category-list" id="subCategoryList"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
 
-  <!-- STEP 3: 詳細入力 -->
-  <div class="step hidden" id="step3">
-    <div class="step-label"><span class="step-num">3</span>詳細を入力</div>
-    <div class="card" id="detailFields"></div>
-  </div>
+  &lt;!-- STEP 3: 詳細入力 --&gt;
+  &lt;div class="step hidden" id="step3"&gt;
+    &lt;div class="step-label"&gt;&lt;span class="step-num"&gt;3&lt;/span&gt;詳細を入力&lt;/div&gt;
+    &lt;div class="card" id="detailFields"&gt;&lt;/div&gt;
+  &lt;/div&gt;
 
-  <!-- 送信ボタン -->
-  <div class="submit-area hidden" id="submitArea">
-    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">送信する</button>
-  </div>
-</div>
+  &lt;!-- 送信ボタン --&gt;
+  &lt;div class="submit-area hidden" id="submitArea"&gt;
+    &lt;button class="submit-btn" id="submitBtn" onclick="handleSubmit()"&gt;送信する&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
 
-<!-- ========== 完了画面 ========== -->
-<div class="container hidden" id="successScreen">
-  <div class="card success-screen">
-    <div class="success-icon">&#10003;</div>
-    <h2>依頼を送信しました</h2>
-    <p>チャットワークにタスク化されます</p>
-    <p class="success-id" id="requestId"></p>
-    <button class="new-btn" onclick="resetForm()">新しい依頼を作成</button>
-  </div>
-</div>
+&lt;!-- ========== 完了画面 ========== --&gt;
+&lt;div class="container hidden" id="successScreen"&gt;
+  &lt;div class="card success-screen"&gt;
+    &lt;div class="success-icon"&gt;&amp;#10003;&lt;/div&gt;
+    &lt;h2&gt;依頼を送信しました&lt;/h2&gt;
+    &lt;p&gt;チャットワークにタスク化されます&lt;/p&gt;
+    &lt;p class="success-id" id="requestId"&gt;&lt;/p&gt;
+    &lt;button class="new-btn" onclick="resetForm()"&gt;新しい依頼を作成&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
 
-  </div><!-- .main-content -->
-</div><!-- .app-body -->
+  &lt;/div&gt;&lt;!-- .main-content --&gt;
+&lt;/div&gt;&lt;!-- .app-body --&gt;
 
-<script>
+&lt;script&gt;
 // ====================================================
 // データ定義
 // ====================================================
@@ -567,7 +588,7 @@ function loadCurrentUser() {
       } else {
         text = '依頼者: ' + (user.name || user.email || '');
       }
-      if (window.parent && window.parent !== window) {
+      if (window.parent &amp;&amp; window.parent !== window) {
         window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: text, error: error }, '*');
       }
       var el = document.getElementById('currentUser');
@@ -577,7 +598,7 @@ function loadCurrentUser() {
       }
     })
     .withFailureHandler(function() {
-      if (window.parent && window.parent !== window) {
+      if (window.parent &amp;&amp; window.parent !== window) {
         window.parent.postMessage({ type: 'ADKANRI_REQUESTER', text: '依頼者: 取得できません。権限を許可してからページを再読み込みしてください', error: true }, '*');
       }
       var el = document.getElementById('currentUser');
@@ -599,7 +620,7 @@ function renderCategories() {
   CATEGORIES.forEach(function(cat) {
     const btn = document.createElement('button');
     btn.className = 'cat-btn';
-    btn.innerHTML = '<span class="cat-icon">' + cat.icon + '</span>' + cat.label;
+    btn.innerHTML = '&lt;span class="cat-icon"&gt;' + cat.icon + '&lt;/span&gt;' + cat.label;
     btn.onclick = function() { selectCategory(cat); };
     btn.dataset.id = cat.id;
     grid.appendChild(btn);
@@ -622,12 +643,12 @@ function selectCategory(cat) {
 
   const subs = SUB_CATEGORIES[cat.id];
 
-  if (subs && subs.length > 1) {
+  if (subs &amp;&amp; subs.length &gt; 1) {
     renderSubCategories(subs);
     show('step2');
     hide('step3');
     hide('submitArea');
-  } else if (subs && subs.length === 1) {
+  } else if (subs &amp;&amp; subs.length === 1) {
     hide('step2');
     selectSubCategory(subs[0]);
   } else {
@@ -695,7 +716,7 @@ function renderFields(fields) {
 
     const label = document.createElement('label');
     label.setAttribute('for', 'input-' + f.id);
-    label.innerHTML = f.label + (f.required ? '<span class="required">*</span>' : '');
+    label.innerHTML = f.label + (f.required ? '&lt;span class="required"&gt;*&lt;/span&gt;' : '');
     div.appendChild(label);
 
     let input;
@@ -738,14 +759,14 @@ function validate() {
   document.querySelectorAll('.error-msg').forEach(function(e) { e.remove(); });
   document.querySelectorAll('.field-error').forEach(function(e) { e.classList.remove('field-error'); });
 
-  if (!state.currentUser || !state.currentUser.allowed || (!state.currentUser.name && !state.currentUser.email)) {
+  if (!state.currentUser || !state.currentUser.allowed || (!state.currentUser.name &amp;&amp; !state.currentUser.email)) {
     valid = false;
     const container = document.getElementById('formScreen');
-    if (container && !document.querySelector('.error-msg.current-user-error')) {
+    if (container &amp;&amp; !document.querySelector('.error-msg.current-user-error')) {
       const err = document.createElement('div');
       err.className = 'error-msg current-user-error';
       err.style.marginBottom = '16px';
-      err.textContent = state.currentUser && state.currentUser.allowed === false
+      err.textContent = state.currentUser &amp;&amp; state.currentUser.allowed === false
         ? 'AXIS・shibuya-ad.com のアドレスでログインしてください。'
         : '依頼者情報が取得できません。デプロイを「ユーザーとして実行」に設定してください。';
       container.insertBefore(err, container.firstChild);
@@ -755,7 +776,7 @@ function validate() {
 
   const inputs = document.querySelectorAll('#detailFields input, #detailFields select, #detailFields textarea');
   inputs.forEach(function(inp) {
-    if (inp.dataset.required === 'true' && (!inp.value || inp.value.trim() === '')) {
+    if (inp.dataset.required === 'true' &amp;&amp; (!inp.value || inp.value.trim() === '')) {
       valid = false;
       const field = inp.closest('.field');
       field.classList.add('field-error');
@@ -778,7 +799,7 @@ function handleSubmit() {
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>送信中...';
+  btn.innerHTML = '&lt;span class="spinner"&gt;&lt;/span&gt;送信中...';
 
   const fields = [];
   const inputs = document.querySelectorAll('#detailFields input, #detailFields select, #detailFields textarea');
@@ -838,32 +859,32 @@ function resetForm() {
 function loadTasks() {
   google.script.run
     .withSuccessHandler(renderTasks)
-    .withFailureHandler(function() { document.getElementById('taskList').innerHTML = '<p style="color:var(--text-dim)">読み込みに失敗しました</p>'; })
+    .withFailureHandler(function() { document.getElementById('taskList').innerHTML = '&lt;p style="color:var(--text-dim)"&gt;読み込みに失敗しました&lt;/p&gt;'; })
     .getTasks();
 }
 
 function renderTasks(tasks) {
   const el = document.getElementById('taskList');
   if (!tasks || tasks.length === 0) {
-    el.innerHTML = '<p style="color:var(--text-dim)">タスクがありません</p>';
+    el.innerHTML = '&lt;p style="color:var(--text-dim)"&gt;タスクがありません&lt;/p&gt;';
     return;
   }
-  let html = '<table class="task-table"><thead><tr><th>タスクID</th><th>依頼者</th><th>依頼内容</th><th>日時</th><th>進捗</th><th></th></tr></thead><tbody>';
+  let html = '&lt;table class="task-table"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;タスクID&lt;/th&gt;&lt;th&gt;依頼者&lt;/th&gt;&lt;th&gt;依頼内容&lt;/th&gt;&lt;th&gt;日時&lt;/th&gt;&lt;th&gt;進捗&lt;/th&gt;&lt;th&gt;&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;';
   tasks.forEach(function(t) {
-    html += '<tr class="task-row" data-task-id="' + t.taskId + '">';
-    html += '<td>' + t.reqId + '</td>';
-    html += '<td>' + t.requester + '</td>';
-    html += '<td>' + t.category + (t.subCategory ? ' / ' + t.subCategory : '') + '</td>';
-    html += '<td>' + t.createdAt + '</td>';
-    html += '<td><select class="status-select" data-task-id="' + t.taskId + '">';
-    html += '<option value="未対応"' + (t.status === '未対応' ? ' selected' : '') + '>未対応</option>';
-    html += '<option value="対応中"' + (t.status === '対応中' ? ' selected' : '') + '>対応中</option>';
-    html += '<option value="完了"' + (t.status === '完了' ? ' selected' : '') + '>完了</option>';
-    html += '</select></td>';
-    html += '<td><button class="btn-update" onclick="doUpdateStatus(' + t.taskId + ')">更新</button></td>';
-    html += '</tr>';
+    html += '&lt;tr class="task-row" data-task-id="' + t.taskId + '"&gt;';
+    html += '&lt;td&gt;' + t.reqId + '&lt;/td&gt;';
+    html += '&lt;td&gt;' + t.requester + '&lt;/td&gt;';
+    html += '&lt;td&gt;' + t.category + (t.subCategory ? ' / ' + t.subCategory : '') + '&lt;/td&gt;';
+    html += '&lt;td&gt;' + t.createdAt + '&lt;/td&gt;';
+    html += '&lt;td&gt;&lt;select class="status-select" data-task-id="' + t.taskId + '"&gt;';
+    html += '&lt;option value="未対応"' + (t.status === '未対応' ? ' selected' : '') + '&gt;未対応&lt;/option&gt;';
+    html += '&lt;option value="対応中"' + (t.status === '対応中' ? ' selected' : '') + '&gt;対応中&lt;/option&gt;';
+    html += '&lt;option value="完了"' + (t.status === '完了' ? ' selected' : '') + '&gt;完了&lt;/option&gt;';
+    html += '&lt;/select&gt;&lt;/td&gt;';
+    html += '&lt;td&gt;&lt;button class="btn-update" onclick="doUpdateStatus(' + t.taskId + ')"&gt;更新&lt;/button&gt;&lt;/td&gt;';
+    html += '&lt;/tr&gt;';
   });
-  html += '</tbody></table>';
+  html += '&lt;/tbody&gt;&lt;/table&gt;';
   el.innerHTML = html;
 }
 
@@ -884,6 +905,20 @@ function doUpdateStatus(taskId) {
 
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
-</script>
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</textarea>
+  <script>
+    document.getElementById('copyBtn').onclick = function() {
+      var ta = document.getElementById('content');
+      ta.select();
+      document.execCommand('copy');
+      var btn = document.getElementById('copyBtn');
+      btn.textContent = 'コピーしました！';
+      btn.classList.add('done');
+      setTimeout(function(){ btn.textContent = 'クリップボードにコピー'; btn.classList.remove('done'); }, 2000);
+    };
+  </script>
 </body>
 </html>

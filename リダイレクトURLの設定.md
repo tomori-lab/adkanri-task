@@ -16,7 +16,7 @@ updated: 2026-03-05
 1. [netlify.com](https://www.netlify.com) にアクセス
 2. 「Sign up」→ GitHubでログイン
 3. 「Add new site」→「Import an existing project」
-4. GitHubを接続し、`tomori-lab/adkanri-task` を選択
+4. GitHubを接続し、`AXIS-AD/adkanri-task` を選択
 5. 設定：
    - **Build command**: 空のまま
    - **Publish directory**: `docs`
@@ -43,7 +43,7 @@ updated: 2026-03-05
 2. リポジトリの「Settings」→「Pages」
 3. Source: 「Deploy from a branch」
 4. Branch: `master` / Folder: `/docs`
-5. 保存後、`https://tomori-lab.github.io/adkanri-task` でアクセス可能
+5. 保存後、`https://AXIS-AD.github.io/adkanri-task` でアクセス可能
 
 ---
 

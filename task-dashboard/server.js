@@ -22,8 +22,21 @@ const AD_MEMBER_IDS = (process.env.AD_MEMBER_IDS || "")
 const PORT = Number(process.env.PORT) || 3456;
 const LOCAL_DATA = path.join(__dirname, "tasks-local.json");
 
+const PERSONS = (process.env.PERSONS || "")
+  .split(",")
+  .map((s) => {
+    const [name, id] = s.split(":").map((x) => x.trim());
+    return name && id ? { name, id: Number(id) } : null;
+  })
+  .filter(Boolean);
+
 const app = express();
 app.use(express.json());
+app.use((req, res, next) => {
+  const time = new Date().toLocaleTimeString("ja-JP");
+  console.log(`[${time}] ${req.method} ${req.url}`);
+  next();
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 function loadLocal() {
@@ -43,14 +56,13 @@ function extractRequester(body) {
 }
 
 async function fetchChatworkTasks(roomId, options = {}) {
-  const { allTasks = false } = options;
+  const { allTasks = false, accountId = null } = options;
   const url = `https://api.chatwork.com/v2/rooms/${roomId}/tasks?status=open`;
   const res = await fetch(url, { headers: { "X-ChatWorkToken": TOKEN } });
   if (!res.ok) throw new Error(`Chatwork API error: ${res.status}`);
   const tasks = await res.json();
-  const filtered = allTasks
-    ? tasks
-    : tasks.filter((t) => t.account.account_id === MY_ID);
+  const targetId = accountId || (allTasks ? null : MY_ID);
+  const filtered = targetId ? tasks.filter((t) => t.account.account_id === targetId) : tasks;
   return filtered.map((t) => ({
       id: String(t.task_id),
       roomId,
@@ -91,6 +103,23 @@ function extractTitle(body) {
   return first ? first.trim().slice(0, 40) : "無題";
 }
 
+app.get("/api/people", (_req, res) => {
+  let people;
+  if (PERSONS.length > 0) {
+    people = PERSONS;
+  } else {
+    const ids = [...new Set(AD_MEMBER_IDS.filter(Boolean))];
+    const idTsutsui = ids.find((id) => id !== MY_ID) || ids[0] || MY_ID;
+    const idIshida = ids.find((id) => id !== MY_ID && id !== idTsutsui) || ids[1] || ids[0];
+    people = [
+      { name: "筒井", id: idTsutsui },
+      { name: "友利", id: MY_ID },
+      { name: "石田", id: idIshida },
+    ].filter((p) => p.id);
+  }
+  res.json({ people, myId: MY_ID });
+});
+
 app.get("/api/debug", (_req, res) => {
   res.json({
     tokenLoaded: !!TOKEN,
@@ -105,14 +134,19 @@ app.get("/api/tasks", async (req, res) => {
     const local = loadLocal();
     const view = req.query.view || "my";
     const requestorEmail = (req.query.email || "").trim().toLowerCase();
-    // アド管理ルーム（依頼ツールと同じ）を view=all / view=requestor で使用
-    const rooms = (view === "all" || view === "requestor") && ROOM_AD ? [ROOM_AD] : ROOMS;
-    const allTasksMode = view === "all" || view === "requestor";
+    const accountId = req.query.accountId ? Number(req.query.accountId) : null;
+    const rooms = accountId != null ? ROOMS : (view === "all" || view === "requestor") && ROOM_AD ? [ROOM_AD] : ROOMS;
+    const allTasksMode = view === "all" || view === "requestor" || accountId != null;
 
     const allTasks = [];
 
     for (const roomId of rooms) {
-      const tasks = await fetchChatworkTasks(roomId, { allTasks: allTasksMode });
+      console.log(`  [Chatwork] ルーム ${roomId} からタスク取得中...`);
+      const tasks = await fetchChatworkTasks(roomId, {
+        allTasks: allTasksMode,
+        accountId: accountId || (view === "my" ? undefined : null),
+      });
+      console.log(`  [Chatwork] → ${tasks.length} 件取得`);
       for (const t of tasks) {
         if (view === "requestor" && requestorEmail) {
           if (t.requester !== requestorEmail) continue;
@@ -129,9 +163,11 @@ app.get("/api/tasks", async (req, res) => {
       }
     }
 
+    console.log(`  [Chatwork] 合計: ${allTasks.length} 件`);
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json(allTasks);
   } catch (err) {
-    console.error("Error fetching tasks:", err);
+    console.error("  [Chatwork] エラー:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -179,5 +215,9 @@ app.post("/api/tools", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Task Dashboard running on port ${PORT}`);
+  console.log("========================================");
+  console.log(`Task Dashboard: http://localhost:${PORT}`);
+  console.log(`  Token: ${TOKEN ? "設定済" : "未設定"}`);
+  console.log(`  ルーム: ${ROOMS.length} 件`);
+  console.log("========================================");
 });

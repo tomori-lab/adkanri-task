@@ -14,7 +14,7 @@ updated: 2026-03-05
 ## 方法A: ワンクリックデプロイ（約2分）
 
 1. 以下のボタンをクリック：
-   [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/tomori-lab/adkanri-task)
+   [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/AXIS-AD/adkanri-task)
 
 2. Netlifyの画面で：
    - GitHubでログイン（初回のみ）
@@ -33,7 +33,7 @@ updated: 2026-03-05
 
 1. [app.netlify.com](https://app.netlify.com) にアクセス
 2. 「Add new site」→「Import an existing project」
-3. 「GitHub」を選択 → `tomori-lab/adkanri-task` を選択
+3. 「GitHub」を選択 → `AXIS-AD/adkanri-task` を選択
 4. 設定：
    - **Branch to deploy**: master
    - **Publish directory**: `docs`

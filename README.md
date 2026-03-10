@@ -4,7 +4,7 @@
 
 ## リダイレクトURL（adkanri-task.netlify.app）
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/tomori-lab/adkanri-task)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/AXIS-AD/adkanri-task)
 
 ↑ クリックで Netlify にデプロイ。サイト名を `adkanri-task` にすると **https://adkanri-task.netlify.app** でアクセス可能。
 
