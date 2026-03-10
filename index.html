@@ -336,12 +336,12 @@ if (window.top === window.self) {
 
 const CATEGORIES = [
   { id: 'account', label: 'アカウント関連（作成・紐づけ・エラー）', icon: '🔑' },
-  { id: 'link', label: 'リンク発行（ナハト・AXIS・DIO）', icon: '🔗' },
-  { id: 'spreadsheet', label: 'スプシ関連（精査用シート・分析シート・運用シート）', icon: '📊' },
+  { id: 'link', label: 'リンク発行依頼', icon: '🔗' },
+  { id: 'spreadsheet', label: 'スプシ関連', icon: '📊' },
   { id: 'new_project', label: '新規案件', icon: '🆕' },
   { id: 'new_offer', label: '新規オファー追加（アカ開設・単価登録・リンク発行などまとめて依頼）', icon: '📦' },
   { id: 'price_change', label: '単価変更', icon: '💰' },
-  { id: 'csv_fix', label: 'CSV保管修正', icon: '📁' },
+  { id: 'csv_fix', label: 'CSV保管修正/後着火修正依頼', icon: '📁' },
   { id: 'cap_notify', label: 'キャップ通知依頼', icon: '🔔' },
   { id: 'other', label: 'その他/エラー関連', icon: '❓' }
 ];
@@ -352,19 +352,11 @@ const SUB_CATEGORIES = {
     { id: 'fb_page', label: 'FBページ作成依頼' },
     { id: 'fb_pixel', label: 'FBピクセル紐づけ依頼' },
     { id: 'fb_permission', label: 'FBアカウント・ページ権限付与依頼' },
-    { id: 'csv_link', label: '精査用シートCSV紐づけ依頼' },
     { id: 'account_ban', label: 'アカBAN対応依頼' }
   ],
-  link: [
-    { id: 'link_axis', label: 'リンク発行 @Axis商流(DIO以外)' },
-    { id: 'link_nahato', label: 'リンク発行 @nahato商流' },
-    { id: 'dio_new', label: '【DIO専用】新規リンク発行 @AXIS商流' },
-    { id: 'dio_add', label: '【DIO専用】既存リンク追加発行 @AXIS商流' },
-    { id: 'link_other', label: 'リンク格納・移行依頼、その他' }
-  ],
-  spreadsheet: [
-    { id: 'seisa_sheet', label: '精査用シート' },
-    { id: 'analysis_sheet', label: '分析用シート、運用シート' }
+  csv_fix: [
+    { id: 'csv_fix_sub', label: 'CSV保管修正' },
+    { id: 'late_fire', label: '後着火修正依頼' }
   ],
   new_project: [
     { id: 'new_project_report', label: '新規案件開始報告' }
@@ -378,7 +370,6 @@ const SUB_CATEGORIES = {
 const FIELDS = {
   // アカウント関連
   new_account: [
-    { id: 'type', label: '開設タイプ', type: 'select', options: ['新規開設', 'ストック作成'], required: true },
     { id: 'project', label: '案件名', type: 'text', required: true },
     { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
     { id: 'quantity', label: '数量', type: 'number', required: true },
@@ -405,12 +396,6 @@ const FIELDS = {
     { id: 'deadline', label: '期限', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
-  csv_link: [
-    { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
-    { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
-    { id: 'deadline', label: '期限', type: 'text', required: false },
-    { id: 'note', label: '備考', type: 'textarea', required: false }
-  ],
   account_ban: [
     { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'LAP', 'X', 'YT', 'その他'], required: true },
     { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
@@ -418,9 +403,9 @@ const FIELDS = {
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
-  // リンク発行
-  link_axis: [
-    { id: 'asp', label: 'ASP', type: 'select', options: ['エンターキー', 'ピアラ', 'ファンネル', 'その他'], required: true },
+  // リンク発行依頼（サブカテゴリなし・直接フィールド表示）
+  link: [
+    { id: 'asp', label: 'ASP', type: 'text', required: true },
     { id: 'project', label: '案件名', type: 'text', required: true },
     { id: 'media', label: '媒体', type: 'select', options: ['FB', 'Tik', 'X', 'YT', 'LAP', 'その他'], required: true },
     { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
@@ -428,49 +413,15 @@ const FIELDS = {
     { id: 'deadline', label: '期限', type: 'text', required: false },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
-  link_nahato: [
-    { id: 'project', label: '案件名', type: 'text', required: true },
-    { id: 'media', label: '媒体', type: 'text', required: true },
-    { id: 'quantity', label: '本数', type: 'text', required: true },
-    { id: 'note', label: '備考', type: 'textarea', required: false }
-  ],
-  dio_new: [
-    { id: 'gender', label: '性別', type: 'select', options: ['男', '女', '男女'], required: true },
-    { id: 'cr_format', label: 'CRフォーマット', type: 'text', required: true },
-    { id: 'article_type', label: '記事種別', type: 'text', required: true },
-    { id: 'offer_name', label: 'オファー名(LP)', type: 'text', required: true },
-    { id: 'area', label: '地域', type: 'text', required: true },
-    { id: 'media', label: '媒体', type: 'text', required: true },
-    { id: 'unit_price', label: '単価', type: 'text', required: true },
-    { id: 'link_number', label: 'リンク番号', type: 'text', required: false },
-    { id: 'quantity', label: '希望本数', type: 'text', required: true },
-    { id: 'deadline', label: '期限', type: 'text', required: false },
-    { id: 'note', label: '備考', type: 'textarea', required: false }
-  ],
-  dio_add: [
-    { id: 'project', label: '案件', type: 'text', required: true },
-    { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
-    { id: 'media', label: '媒体', type: 'text', required: true },
-    { id: 'quantity', label: '希望本数', type: 'text', required: true },
-    { id: 'ax_number', label: '該当番号（AX○○）', type: 'text', required: false },
-    { id: 'deadline', label: '期限', type: 'text', required: false },
-    { id: 'note', label: '備考', type: 'textarea', required: false }
-  ],
-  link_other: [
-    { id: 'detail', label: '詳細', type: 'textarea', required: true }
-  ],
 
-  // スプシ関連
-  seisa_sheet: [
-    { id: 'timing', label: '当日 or 前日', type: 'select', options: ['当日', '前日'], required: true },
+  // スプシ関連（サブカテゴリなし・直接フィールド表示）
+  spreadsheet: [
     { id: 'error_type', label: 'エラー内容', type: 'select', options: ['運用中のキャンペーンが出力されていない', 'キャンペーンのデータ(消化金額,imp,click)が間違っている', 'キャンペーンのMCV,CVが反映されていない', 'その他'], required: true },
     { id: 'media', label: '媒体', type: 'text', required: false },
-    { id: 'account_name', label: 'アカウント名', type: 'text', required: false }
-  ],
-  analysis_sheet: [
-    { id: 'error_type', label: 'エラー内容', type: 'select', options: ['キャンペーンのデータ(消化金額,imp,click)が間違っている', 'キャンペーンのMCV,CVが反映されていない', 'その他'], required: true },
-    { id: 'date', label: '該当日', type: 'text', required: false },
-    { id: 'campaign', label: 'キャンペーン名', type: 'text', required: false }
+    { id: 'account_name', label: 'アカウント名', type: 'text', required: false },
+    { id: 'sheet_name', label: 'シート名', type: 'text', required: true },
+    { id: 'cell_url', label: '該当セルURL', type: 'text', required: false },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
   // 新規案件
@@ -486,39 +437,44 @@ const FIELDS = {
 
   // 新規オファー追加
   new_offer: [
-    { id: 'request_item', label: '依頼事項', type: 'text', required: true },
-    { id: 'project', label: '案件名', type: 'text', required: true },
-    { id: 'page_name', label: 'ページ名', type: 'text', required: false },
-    { id: 'permission', label: '権限（運用者）', type: 'text', required: false },
-    { id: 'bizmane', label: '作ってほしいビジマネ', type: 'text', required: false },
-    { id: 'deadline', label: '期限', type: 'text', required: false },
+    { id: 'offer_name', label: 'オファー名', type: 'text', required: true },
+    { id: 'lp', label: 'LP', type: 'text', required: true },
+    { id: 'link_count', label: 'リンク本数', type: 'text', required: true },
+    { id: 'unit_price', label: '単価', type: 'text', required: true },
+    { id: 'account_count', label: 'アカウント個数', type: 'text', required: true },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
   // 単価変更
   price_change: [
-    { id: 'change_type', label: 'ピクセル関連/その他', type: 'select', options: ['ピクセル関連', 'その他'], required: true },
-    { id: 'asp', label: 'ASP', type: 'text', required: true },
-    { id: 'project', label: '案件名', type: 'text', required: true },
-    { id: 'media', label: '媒体', type: 'text', required: true },
-    { id: 'deadline', label: '期日', type: 'text', required: false },
-    { id: 'detail', label: '詳細', type: 'textarea', required: true },
+    { id: 'project', label: '案件', type: 'text', required: true },
+    { id: 'unit_price', label: '単価', type: 'text', required: true },
+    { id: 'apply_date', label: '適用日付', type: 'text', required: true },
     { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
-  // CSV保管修正
-  csv_fix: [
-    { id: 'media', label: '媒体名', type: 'text', required: true },
-    { id: 'account_name', label: 'アカウント名', type: 'text', required: true },
-    { id: 'campaign1', label: 'キャンペーン名①', type: 'text', required: true },
-    { id: 'campaign2', label: 'キャンペーン名②', type: 'text', required: false },
-    { id: 'campaign3', label: 'キャンペーン名③', type: 'text', required: false },
-    { id: 'occurred_date', label: '発生日', type: 'date', required: true }
+  // CSV保管修正/後着火修正依頼
+  csv_fix_sub: [
+    { id: 'campaign_before', label: '変更前キャンペーン名', type: 'text', required: true },
+    { id: 'campaign_after', label: '変更後キャンペーン名', type: 'text', required: true },
+    { id: 'fix_type', label: '修正内容（MCV/CV）', type: 'text', required: true },
+    { id: 'date', label: '日付', type: 'text', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
+  ],
+  late_fire: [
+    { id: 'campaign', label: 'キャンペーン名', type: 'text', required: true },
+    { id: 'fix_type', label: '修正内容（MCV/CV）', type: 'text', required: true },
+    { id: 'date', label: '日付', type: 'text', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
   // キャップ通知依頼
   cap_notify: [
-    { id: 'sheet_name', label: '該当のスプレッドシート名', type: 'text', required: true }
+    { id: 'project', label: '案件', type: 'text', required: true },
+    { id: 'media', label: '媒体', type: 'text', required: true },
+    { id: 'cap', label: 'キャップ', type: 'text', required: true },
+    { id: 'notify_count', label: '通知件数', type: 'text', required: true },
+    { id: 'note', label: '備考', type: 'textarea', required: false }
   ],
 
   // その他
