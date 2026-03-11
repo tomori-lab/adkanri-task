@@ -232,17 +232,25 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .hidden { display: none !important; }
 
-  .admin-container { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+  .admin-container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
   .admin-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
   .admin-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-  .admin-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  .admin-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface2); border-radius: 6px; font-size: 13px; }
-  .admin-item span { flex: 1; }
-  .admin-item button { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
-  .admin-item button:hover { background: rgba(239,68,68,.2); color: var(--red); border-color: var(--red); }
-  .admin-add { display: flex; gap: 8px; }
-  .admin-add input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); color: var(--text); font-size: 13px; }
-  .admin-add button { padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .user-role-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .user-role-table th { text-align: left; padding: 8px 10px; font-weight: 600; color: var(--text2); font-size: 11px; border-bottom: 1px solid var(--border); }
+  .user-role-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ur-user { display: flex; align-items: center; gap: 10px; }
+  .ur-avatar { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; background: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ur-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .ur-avatar span { color: white; font-weight: 600; font-size: 14px; }
+  .ur-name { font-weight: 500; }
+  .ur-email { color: var(--text2); font-size: 12px; }
+  .role-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .role-switch input { display: none; }
+  .role-slider { width: 36px; height: 20px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); position: relative; transition: all .2s; flex-shrink: 0; }
+  .role-slider::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text2); transition: all .2s; }
+  .role-switch input:checked + .role-slider { background: var(--accent); border-color: var(--accent); }
+  .role-switch input:checked + .role-slider::after { left: 18px; background: white; }
+  .role-label { font-size: 12px; color: var(--text2); min-width: 50px; }
 
   .req-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .req-table th, .req-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -375,13 +383,9 @@
     <div class="panel" id="panel-admin">
       <div class="admin-container">
         <div class="admin-section">
-          <h3>管理者権限</h3>
+          <h3>ユーザー管理</h3>
           <p style="font-size:12px;color:var(--text2);margin-bottom:12px;">管理者は全タスクの表示・ステータス管理ができます</p>
-          <div class="admin-list" id="adminList"></div>
-          <div class="admin-add">
-            <input type="email" id="adminEmailInput" placeholder="メールアドレスを入力">
-            <button onclick="addAdmin()">追加</button>
-          </div>
+          <div id="userRoleList"></div>
         </div>
       </div>
     </div>
@@ -755,40 +759,56 @@ async function loadMyRequests() {
 // ============================
 // Admin panel
 // ============================
+var adminData = { admins: [], users: [] };
+
 async function loadAdminRoles() {
+  var area = document.getElementById("userRoleList");
+  area.innerHTML = '<div style="color:var(--text2);font-size:12px;">読み込み中...</div>';
   try {
-    var data = await apiCall("GET", "/api/admin/roles");
-    var list = document.getElementById("adminList");
-    if (!data.admins || data.admins.length === 0) {
-      list.innerHTML = '<div style="color:var(--text2);font-size:12px;">管理者がいません</div>';
-      return;
+    adminData = await apiCall("GET", "/api/admin/roles");
+    renderUserRoleList();
+  } catch (e) {
+    area.innerHTML = '<div style="color:var(--text2);font-size:12px;">読み込みに失敗しました</div>';
+  }
+}
+
+function renderUserRoleList() {
+  var area = document.getElementById("userRoleList");
+  var users = adminData.users || [];
+  var admins = adminData.admins || [];
+  if (users.length === 0) {
+    area.innerHTML = '<div style="color:var(--text2);font-size:12px;">ログイン済みのユーザーがいません</div>';
+    return;
+  }
+  var html = '<table class="user-role-table"><thead><tr><th>ユーザー</th><th>メール</th><th>権限</th></tr></thead><tbody>';
+  users.forEach(function(u) {
+    var isAdmin = admins.includes(u.email);
+    var initial = (u.name || "?").charAt(0).toUpperCase();
+    html += '<tr>';
+    html += '<td class="ur-user"><div class="ur-avatar">';
+    if (u.picture) { html += '<img src="' + esc(u.picture) + '">'; }
+    else { html += '<span>' + esc(initial) + '</span>'; }
+    html += '</div><span class="ur-name">' + esc(u.name || u.email) + '</span></td>';
+    html += '<td class="ur-email">' + esc(u.email) + '</td>';
+    html += '<td><label class="role-switch"><input type="checkbox"' + (isAdmin ? ' checked' : '') + ' onchange="toggleAdminRole(\'' + esc(u.email) + '\',this.checked)"><span class="role-slider"></span><span class="role-label">' + (isAdmin ? '管理者' : 'ユーザー') + '</span></label></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+async function toggleAdminRole(email, makeAdmin) {
+  try {
+    var admins = (adminData.admins || []).slice();
+    if (makeAdmin && !admins.includes(email)) {
+      admins.push(email);
+    } else if (!makeAdmin) {
+      admins = admins.filter(function(e) { return e !== email; });
     }
-    list.innerHTML = data.admins.map(function(email) { return '<div class="admin-item"><span>' + esc(email) + '</span><button onclick="removeAdmin(\'' + email + '\')">削除</button></div>'; }).join("");
-  } catch (e) {}
-}
-
-async function addAdmin() {
-  var input = document.getElementById("adminEmailInput");
-  var email = input.value.trim().toLowerCase();
-  if (!email) return;
-  try {
-    var data = await apiCall("GET", "/api/admin/roles");
-    var admins = data.admins || [];
-    if (!admins.includes(email)) admins.push(email);
     await apiCall("POST", "/api/admin/roles", { admins: admins });
-    input.value = "";
-    loadAdminRoles();
-  } catch (e) { alert("追加に失敗しました"); }
-}
-
-async function removeAdmin(email) {
-  if (!confirm(email + " の管理者権限を削除しますか？")) return;
-  try {
-    var data = await apiCall("GET", "/api/admin/roles");
-    var admins = (data.admins || []).filter(function(e) { return e !== email; });
-    await apiCall("POST", "/api/admin/roles", { admins: admins });
-    loadAdminRoles();
-  } catch (e) { alert("削除に失敗しました"); }
+    adminData.admins = admins;
+    renderUserRoleList();
+  } catch (e) { alert("権限変更に失敗しました"); }
 }
 
 // ============================

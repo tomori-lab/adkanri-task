@@ -422,15 +422,27 @@ async function handleCheckRole(request, env) {
   if (isFirstUser) {
     roles.admins.push(user.email);
     await saveAdminRoles(env, roles);
-    return jsonResponse({ role: 'admin', firstSetup: true });
   }
 
-  return jsonResponse({ role: isAdmin ? 'admin' : 'user' });
+  const users = await getRegisteredUsers(env);
+  const existing = users.find((u) => u.email === user.email);
+  if (!existing) {
+    users.push({ email: user.email, name: user.name || user.email, picture: user.picture || null, lastLogin: new Date().toISOString() });
+  } else {
+    existing.name = user.name || existing.name;
+    existing.picture = user.picture || existing.picture;
+    existing.lastLogin = new Date().toISOString();
+  }
+  await saveRegisteredUsers(env, users);
+
+  return jsonResponse({ role: isFirstUser || isAdmin ? 'admin' : 'user' });
 }
 
 async function handleGetAdminRoles(request, env) {
   await verifyGoogleToken(request, env);
-  return jsonResponse(await getAdminRoles(env));
+  const roles = await getAdminRoles(env);
+  const users = await getRegisteredUsers(env);
+  return jsonResponse({ admins: roles.admins, users });
 }
 
 async function handleUpdateAdminRoles(request, env) {
@@ -650,6 +662,15 @@ async function getAdminRoles(env) {
 
 async function saveAdminRoles(env, roles) {
   await env.TASK_STORE.put('ADMIN_ROLES', JSON.stringify(roles));
+}
+
+async function getRegisteredUsers(env) {
+  const data = await env.TASK_STORE.get('REGISTERED_USERS');
+  return data ? JSON.parse(data) : [];
+}
+
+async function saveRegisteredUsers(env, users) {
+  await env.TASK_STORE.put('REGISTERED_USERS', JSON.stringify(users));
 }
 
 // ====================================================
