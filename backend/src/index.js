@@ -216,11 +216,14 @@ async function handleGetMyRequests(request, env) {
   const allTasks = [...tasks, ...doneTasks];
   const result = [];
   const userEmail = user.email.toLowerCase();
+  const userName = (user.name || '').toLowerCase();
 
   for (const t of allTasks) {
     const body = t.body || '';
-    const requester = extractRequester(body);
-    if (!requester || requester !== userEmail) continue;
+    const reqName = extractRequesterName(body);
+    if (!reqName) continue;
+    const reqLower = reqName.toLowerCase();
+    if (reqLower !== userEmail && reqLower !== userName && !userEmail.startsWith(reqLower + '@')) continue;
 
     const meta = local[String(t.task_id)] || {};
     const statusMap = { open: '\u672A\u7740\u624B', in_progress: '\u7740\u624B\u4E2D', waiting: '\u76F8\u624B\u5F85\u3061', done: '\u5B8C\u4E86' };
@@ -552,6 +555,11 @@ async function sendChatworkTask(formData, reqId, env) {
 function extractRequester(body) {
   const m = (body || '').match(/依頼者[：:]\s*([^\s\n]+@[^\s\n]+)/);
   return m ? m[1].trim().toLowerCase() : null;
+}
+
+function extractRequesterName(body) {
+  const m = (body || '').match(/依頼者[：:]\s*([^\n]+)/);
+  return m ? m[1].trim() : null;
 }
 
 function autoCategory(body) {
