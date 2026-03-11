@@ -267,11 +267,16 @@ async function handleGetDashboardTasks(request, env) {
   const local = await getDashboardLocal(env);
   const allTasksList = [];
 
-  for (const roomId of rooms) {
-    const targetId = accountId !== null ? accountId : null;
-    const tasks = await fetchChatworkTasksForDashboard(roomId, cfg.apiToken, targetId);
+  const memberIds = DEFAULT_PEOPLE.map((p) => p.id);
+  const targetIds = accountId !== null ? [accountId] : memberIds;
+  const seen = new Set();
 
-    for (const t of tasks) {
+  for (const roomId of rooms) {
+    const allRoomTasks = await fetchChatworkTasksForDashboard(roomId, cfg.apiToken, null);
+    for (const t of allRoomTasks) {
+      if (!targetIds.includes(t.assigneeId)) continue;
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
       const meta = local[t.id] || {};
       allTasksList.push({
         ...t,
@@ -477,6 +482,8 @@ async function fetchChatworkTasksForDashboard(roomId, apiToken, targetId) {
     body: t.body,
     limit: t.limit_time ? new Date(t.limit_time * 1000).toISOString().slice(0, 10) : null,
     assignedBy: t.assigned_by_account?.name || '',
+    assigneeId: t.account?.account_id || 0,
+    assigneeName: t.account?.name || '',
     status: t.status,
     requester: extractRequester(t.body),
   }));
