@@ -7,7 +7,7 @@ compatibility_date = "2024-01-01"
 #   wrangler kv:namespace create TASK_STORE
 [[kv_namespaces]]
 binding = "TASK_STORE"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+id = "d8d1d95bd7484f65bbf0ed6f597a7dc3"
 
 # 環境変数（シークレット）は wrangler secret put で設定:
 #   wrangler secret put CHATWORK_API_TOKEN

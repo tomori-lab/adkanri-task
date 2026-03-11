@@ -8,6 +8,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Dependencies
+node_modules/
+
 # Local config (if you create one)
 config.local.js
 .env
