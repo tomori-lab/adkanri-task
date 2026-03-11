@@ -434,6 +434,23 @@ async function sendChatworkTask(formData, reqId, env) {
   });
 
   const result = await res.json();
+
+  // ダッシュボード用ルーム (333632829) にも同じ担当でタスク作成
+  const dashboardRoom = env.CHATWORK_ROOM_2 || '333632829';
+  if (dashboardRoom && dashboardRoom !== cfg.roomId) {
+    try {
+      await fetch(`https://api.chatwork.com/v2/rooms/${dashboardRoom}/tasks`, {
+        method: 'POST',
+        headers: { 'X-ChatWorkToken': cfg.apiToken },
+        body: new URLSearchParams({
+          body,
+          limit: String(Math.floor(Date.now() / 1000) + 86400),
+          to_ids: toId,
+        }),
+      });
+    } catch (_) {}
+  }
+
   if (result.task_ids && result.task_ids[0]) return result.task_ids[0];
   throw new Error('チャットワーク通知に失敗しました: ' + JSON.stringify(result));
 }
