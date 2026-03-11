@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="TOアド管理">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --primary: #60a5fa;
       --primary-hover: #3b82f6;
       --primary-light: rgba(96,165,250,.2);
@@ -24,6 +24,22 @@
       --text-muted: #94a3b8;
       --text-dim: #64748b;
       --radius: 4px;
+    }
+    [data-theme="light"] {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-light: rgba(59,130,246,.1);
+      --success: #10b981;
+      --success-light: rgba(16,185,129,.1);
+      --danger: #ef4444;
+      --danger-light: rgba(239,68,68,.1);
+      --bg: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-input: #f1f5f9;
+      --border: #cbd5e1;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -49,6 +65,12 @@
     .app-header .requester { font-size: 12px; color: var(--text-muted); }
     .app-header .requester.error { color: var(--danger); }
     .app-header .spacer { flex: 1; }
+    .theme-toggle {
+      background: none; border: none; cursor: pointer;
+      font-size: 20px; line-height: 1; padding: 4px;
+      border-radius: 6px; transition: background .2s;
+    }
+    .theme-toggle:hover { background: rgba(128,128,128,.2); }
     #googleSignIn { flex-shrink: 0; }
 
     /* レイアウト */
@@ -206,6 +228,11 @@
     .field-error input, .field-error select, .field-error textarea { border-color: var(--danger); }
     ::placeholder { color: var(--text-dim); }
     ::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+    [data-theme="light"] ::-webkit-calendar-picker-indicator { filter: none; }
+    [data-theme="light"] select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    }
+    [data-theme="light"] .auth-overlay { background: rgba(241,245,249,.85); }
 
     /* タスク一覧 */
     .task-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -224,6 +251,7 @@
   <h1>TOアド管理ツール</h1>
   <span id="headerRequester" class="requester"></span>
   <div class="spacer"></div>
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="テーマ切替">&#127769;</button>
   <div id="googleSignIn"></div>
 </header>
 
@@ -771,6 +799,25 @@ function doUpdateStatus(taskId) {
 // ====================================================
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ====================================================
+// テーマ切替
+// ====================================================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  var btn = document.getElementById('themeToggle');
+  btn.innerHTML = theme === 'dark' ? '\u{1F319}' : '\u{2600}\uFE0F';
+  btn.title = theme === 'dark' ? 'ライトテーマに切替' : 'ダークテーマに切替';
+  localStorage.setItem('adkanri-theme', theme);
+}
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+(function() {
+  var saved = localStorage.getItem('adkanri-theme') || 'dark';
+  applyTheme(saved);
+})();
 </script>
 </body>
 </html>
