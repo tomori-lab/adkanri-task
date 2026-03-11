@@ -516,7 +516,7 @@ function hasLineYahooMedia(formData) {
 async function sendChatworkTask(formData, reqId, env) {
   const cfg = getChatworkConfig(env);
   const bh = isBusinessHours();
-  const toId = hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, bh);
+  const toId = !bh ? cfg.allUserIds : hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, bh);
 
   const subLabel = formData.subCategory || formData.category;
   const fieldLines = [];
