@@ -499,10 +499,24 @@ function resolveAssignee(cfg, category, bh) {
   return toId || cfg.allUserIds;
 }
 
+const LINE_YAHOO_ASSIGNEE = '9797164';
+const LINE_YAHOO_KEYWORDS = ['LINE', 'LY', 'Yahoo'];
+
+function hasLineYahooMedia(formData) {
+  if (!formData.fields) return false;
+  for (const f of formData.fields) {
+    if (f.label && /媒体/.test(f.label) && f.value) {
+      const val = String(f.value);
+      if (LINE_YAHOO_KEYWORDS.some((kw) => val.includes(kw))) return true;
+    }
+  }
+  return false;
+}
+
 async function sendChatworkTask(formData, reqId, env) {
   const cfg = getChatworkConfig(env);
   const bh = isBusinessHours();
-  const toId = resolveAssignee(cfg, formData.category, bh);
+  const toId = hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, bh);
 
   const subLabel = formData.subCategory || formData.category;
   const fieldLines = [];
