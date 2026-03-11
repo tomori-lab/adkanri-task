@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja"><!-- v20260311 -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1063,7 +1063,7 @@ function renderAll() {
     var chatworkTasks = allTasks.filter(function(t) { return !t.isManual; });
     html += '<div class="summary-row">';
     people.forEach(function(p) {
-      var pTasks = chatworkTasks.filter(function(t) { return t.assigneeId === p.id; });
+      var pTasks = chatworkTasks.filter(function(t) { return String(t.assigneeId) === String(p.id); });
       var openCount = pTasks.filter(function(t) { return t.localStatus === "open"; }).length;
       var ipCount = pTasks.filter(function(t) { return t.localStatus === "in_progress"; }).length;
       var waitCount = pTasks.filter(function(t) { return t.localStatus === "waiting"; }).length;
