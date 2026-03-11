@@ -60,19 +60,18 @@
   .genre-btn.active { color: var(--accent); border-left-color: var(--accent); background: rgba(59,130,246,.1); }
 
   .main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; }
-  header .view-badge { margin-right: auto; font-size: 11px; padding: 4px 10px; border-radius: 8px; background: var(--surface2); color: var(--text2); }
-  .sidebar-toggle { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 8px; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  header .view-badge { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .header-meta { font-size: 11px; color: var(--text2); white-space: nowrap; }
+  .sidebar-toggle { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 16px; cursor: pointer; display: none; align-items: center; justify-content: center; flex-shrink: 0; }
   .sidebar-toggle:hover { background: rgba(255,255,255,.1); color: var(--text); }
-  .stats { display: flex; gap: 8px; align-items: center; }
-  .stat-badge { background: var(--surface2); padding: 4px 12px; border-radius: 12px; font-size: 12px; color: var(--text2); }
-  .stat-badge strong { color: var(--text); }
-  .reload-btn { background: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .reload-btn:hover { opacity: .85; }
-  .reload-btn:disabled { opacity: .5; cursor: wait; }
-  .theme-toggle { background: transparent; border: 1px solid var(--border); border-radius: 8px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .theme-toggle:hover { background: var(--surface2); }
-  .last-updated { font-size: 11px; color: var(--text2); }
+  .stats { display: flex; gap: 6px; align-items: center; }
+  .header-icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+  .header-icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .header-icon-btn:disabled { opacity: .4; cursor: wait; }
+  .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: default; }
 
   .panel { display: none; flex: 1; overflow-y: auto; }
   .panel.active { display: block; }
@@ -266,16 +265,21 @@
 
   <div class="main-content">
     <header>
-      <button class="sidebar-toggle" id="sidebarOpen" onclick="toggleSidebar()">&#9776;</button>
-      <span class="view-badge" id="viewBadge"></span>
-      <div class="stats" id="headerStats" style="display:none;">
-        <span class="last-updated" id="lastUpdated"></span>
-        <span class="stat-badge">Chatwork <strong id="totalCount">-</strong> 件</span>
-        <button class="reload-btn" id="reloadBtn" onclick="loadAll()">再読み込み</button>
+      <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarOpen" onclick="toggleSidebar()">&#9776;</button>
+        <span class="view-badge" id="viewBadge"></span>
+        <div class="stats" id="headerStats" style="display:none;">
+          <span class="header-meta" id="lastUpdated"></span>
+          <span class="header-meta">・</span>
+          <span class="header-meta"><strong id="totalCount">-</strong> 件</span>
+          <button class="header-icon-btn" id="reloadBtn" onclick="loadAll()" title="再読み込み">&#8635;</button>
+        </div>
       </div>
-      <div style="flex:1;"></div>
-      <div id="googleSignIn"></div>
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="テーマ切替">&#127769;</button>
+      <div class="header-right">
+        <div class="user-avatar" id="userAvatar" title=""></div>
+        <button class="header-icon-btn" id="themeToggle" onclick="toggleTheme()" title="テーマ切替">&#127769;</button>
+      </div>
+      <div id="googleSignIn" style="display:none;"></div>
     </header>
 
     <div class="panel active" id="panel-request">
@@ -423,8 +427,15 @@ function apiCall(method, path, body) {
 function handleCredentialResponse(response) {
   authToken = response.credential;
   var payload = decodeJwt(authToken);
-  currentUser = { email: payload.email, name: payload.name || payload.email };
+  currentUser = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || null };
   document.getElementById("sidebarUser").textContent = currentUser.email;
+  var avatar = document.getElementById("userAvatar");
+  if (currentUser.picture) {
+    avatar.innerHTML = '<img src="' + currentUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+  } else {
+    avatar.textContent = (currentUser.name || "?").charAt(0).toUpperCase();
+  }
+  avatar.title = currentUser.name;
   document.getElementById("authOverlay").classList.add("hidden");
   checkRole();
 }
@@ -455,7 +466,6 @@ function initGoogleSignIn() {
       callback: handleCredentialResponse,
       auto_select: true,
     });
-    google.accounts.id.renderButton(document.getElementById("googleSignIn"), { theme: "filled_blue", size: "small", shape: "pill", text: "signin", locale: "ja" });
     google.accounts.id.renderButton(document.getElementById("googleSignInLarge"), { theme: "filled_blue", size: "large", shape: "pill", text: "signin_with", locale: "ja" });
     google.accounts.id.prompt();
   }
