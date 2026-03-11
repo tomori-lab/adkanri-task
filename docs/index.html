@@ -70,6 +70,11 @@
   .header-icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
   .header-icon-btn:hover { background: var(--surface2); color: var(--text); }
   .header-icon-btn:disabled { opacity: .4; cursor: wait; }
+  .reload-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 8px; border: none; background: var(--accent); color: white; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: opacity .2s; }
+  .reload-btn:hover { opacity: .85; }
+  .reload-btn:disabled { opacity: .4; cursor: wait; }
+  .reload-btn .reload-icon { display: inline-block; transition: transform .3s; }
+  .reload-btn:not(:disabled):active .reload-icon { transform: rotate(360deg); }
   .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: default; }
 
   .panel { display: none; flex: 1; overflow-y: auto; }
@@ -267,7 +272,7 @@
         <button class="sidebar-toggle" id="sidebarOpen" onclick="toggleSidebar()">&#9776;</button>
         <div class="stats" id="headerStats" style="display:none;">
           <span class="header-meta" id="lastUpdated"></span>
-          <button class="header-icon-btn" id="reloadBtn" onclick="loadAll()" title="再読み込み">&#x21bb;</button>
+          <button class="reload-btn" id="reloadBtn" onclick="loadAll()"><span class="reload-icon">&#x21bb;</span> 更新</button>
         </div>
       </div>
       <div class="header-right">
@@ -1082,7 +1087,7 @@ function renderPersonButtons() {
 
 async function loadAll() {
   var btn = document.getElementById("reloadBtn");
-  btn.disabled = true; btn.innerHTML = "&#x23F3;";
+  btn.disabled = true; btn.innerHTML = '<span class="reload-icon">&#x23F3;</span> 更新中';
   apiError = null;
   document.getElementById("apiErrorBanner").style.display = "none";
   try {
@@ -1108,7 +1113,7 @@ async function loadAll() {
     if (apiError) { document.getElementById("apiErrorBanner").textContent = "Chatwork: " + apiError; document.getElementById("apiErrorBanner").style.display = "block"; }
   } catch (err) {
     document.getElementById("app").innerHTML = '<div class="empty-state" style="color:var(--red);">読み込みエラー: ' + esc(err.message) + '</div>';
-  } finally { btn.disabled = false; btn.innerHTML = "&#x21bb;"; }
+  } finally { btn.disabled = false; btn.innerHTML = '<span class="reload-icon">&#x21bb;</span> 更新'; }
 }
 
 // ============================
