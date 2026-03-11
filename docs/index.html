@@ -339,7 +339,7 @@
       <main>
         <div class="display-toggle" id="displayToggle" style="display:none;">
           <button class="active" data-mode="status" onclick="setDisplayMode('status')">ステータス別</button>
-          <button data-mode="category" onclick="setDisplayMode('category')">カテゴリ別</button>
+          <button data-mode="priority" onclick="setDisplayMode('priority')">優先度別</button>
         </div>
         <div id="app"><div class="empty-state">タスク管理を開くには左メニューから「タスク管理」を選択してください</div></div>
       </main>
@@ -1096,8 +1096,11 @@ function renderAll() {
   } else {
     var active = tasksToShow.filter(function(t) { return t.localStatus !== "done"; });
     var done = tasksToShow.filter(function(t) { return t.localStatus === "done"; });
-    if (displayMode === "category") {
-      html = CATEGORY_ORDER.map(function(cat) { var t = active.filter(function(x) { return normalizeCategory(x.category) === cat; }); t.sort(ps); return renderSection(CATEGORY_LABELS[cat], t, CATEGORY_COLORS[cat], cat); }).join("") + (done.length ? renderSection("完了", done, "var(--green)") : "");
+    if (displayMode === "priority") {
+      var hi = active.filter(function(t) { return t.priority === "high"; });
+      var md = active.filter(function(t) { return t.priority === "medium" || !t.priority; });
+      var lo = active.filter(function(t) { return t.priority === "low"; });
+      html = [renderSection("高", hi, "var(--red)"), renderSection("中", md, "var(--yellow)"), renderSection("低", lo, "var(--text2)"), done.length ? renderSection("完了", done, "var(--green)") : ""].join("");
     } else {
       var o = tasksToShow.filter(function(t) { return t.localStatus === "open"; }); o.sort(ps);
       var ip = tasksToShow.filter(function(t) { return t.localStatus === "in_progress"; }); ip.sort(ps);
