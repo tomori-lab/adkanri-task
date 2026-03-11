@@ -133,15 +133,21 @@
   .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .3s; }
   .todo-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
-  .todo-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--surface2); border-radius: 6px; font-size: 13px; }
-  .todo-item input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--green); width: 16px; height: 16px; cursor: pointer; }
-  .todo-item.checked span { text-decoration: line-through; color: var(--text2); }
-  .todo-date { font-size: 11px; color: var(--text2); flex-shrink: 0; }
-  .todo-text { flex: 1; }
-  .todo-add { display: flex; gap: 6px; margin-top: 8px; }
+  .todo-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; font-size: 13px; }
+  .todo-item.todo-done { opacity: .55; }
+  .todo-item.todo-done .todo-text { text-decoration: line-through; }
+  .todo-text { flex: 1; font-weight: 500; }
+  .todo-status-select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); font-size: 11px; flex-shrink: 0; }
+  .todo-date-input { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); font-size: 11px; flex-shrink: 0; width: 120px; }
+  .todo-delete-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: 0; transition: opacity .2s; flex-shrink: 0; }
+  .todo-item:hover .todo-delete-btn { opacity: 1; }
+  .todo-delete-btn:hover { color: var(--red); }
+  .todo-add { display: flex; gap: 6px; margin-top: 10px; }
   .todo-add input { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); color: var(--text); font-size: 13px; }
   .todo-add input:focus { outline: none; border-color: var(--accent); }
   .todo-add button { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .modal-save-btn { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px; transition: opacity .2s; }
+  .modal-save-btn:hover { opacity: .85; }
   .status-select-inline { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 6px; font-size: 12px; }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -889,12 +895,14 @@ var STATUS_LABELS_LT = { open: "未着手", in_progress: "着手中", done: "完
 
 function renderLongTermCard(t) {
   var todos = t.todos || [];
-  var doneCount = todos.filter(function(x) { return x.done; }).length;
+  var doneCount = todos.filter(function(x) { return x.status === "done" || x.done; }).length;
   var total = todos.length;
   var pct = total > 0 ? Math.round(doneCount / total * 100) : 0;
   var deadlineStr = t.deadline ? t.deadline : "期日未設定";
   return '<div class="card" onclick="openLongTermModal(\'' + t.id + '\')"><div class="card-top"><div class="card-title">' + esc(t.title) + '</div><button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">&#128465;</button></div><div class="card-meta"><span>' + deadlineStr + '</span><span>' + (STATUS_LABELS_LT[t.status] || "未着手") + '</span></div>' + (total > 0 ? '<div class="todo-progress"><div class="todo-progress-text">やること: ' + doneCount + '/' + total + ' 完了</div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>' : '') + '</div>';
 }
+
+var TODO_STATUSES = { open: "未着手", in_progress: "着手中", done: "完了" };
 
 function openLongTermModal(id) {
   var t = allTasks.find(function(x) { return x.id === id; });
@@ -904,7 +912,7 @@ function openLongTermModal(id) {
   var todos = t.todos || [];
 
   var metaHtml = '<span>' + (t.deadline || "期日未設定") + '</span>';
-  metaHtml += '<select class="status-select-inline" onchange="updateLongTermStatus(\'' + id + '\',this.value)">';
+  metaHtml += '<select class="status-select-inline" onchange="updateLongTermField(\'' + id + '\',\'status\',this.value)">';
   ["open","in_progress","done"].forEach(function(s) {
     metaHtml += '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + STATUS_LABELS_LT[s] + '</option>';
   });
@@ -912,46 +920,68 @@ function openLongTermModal(id) {
   document.getElementById("modalMeta").innerHTML = metaHtml;
 
   var bodyHtml = '<h3 style="font-size:14px;margin-bottom:10px;color:var(--text);">やること</h3>';
-  bodyHtml += '<div class="todo-list">';
+  bodyHtml += '<div class="todo-list" id="todoListArea">';
   if (todos.length === 0) {
     bodyHtml += '<div style="color:var(--text2);font-size:13px;padding:8px 0;">まだ追加されていません</div>';
   }
   todos.forEach(function(item, idx) {
-    bodyHtml += '<div class="todo-item' + (item.done ? ' checked' : '') + '"><input type="checkbox"' + (item.done ? ' checked' : '') + ' onchange="toggleTodoItem(\'' + id + '\',' + idx + ')"><span class="todo-date">' + (item.date || "") + '</span><span class="todo-text">' + esc(item.text) + '</span></div>';
+    var isDone = item.status === "done";
+    bodyHtml += '<div class="todo-item' + (isDone ? ' todo-done' : '') + '">';
+    bodyHtml += '<span class="todo-text">' + esc(item.text) + '</span>';
+    bodyHtml += '<input type="date" class="todo-date-input" value="' + (item.date || "") + '" onchange="changeTodoField(\'' + id + '\',' + idx + ',\'date\',this.value)">';
+    bodyHtml += '<select class="todo-status-select" onchange="changeTodoField(\'' + id + '\',' + idx + ',\'status\',this.value)">';
+    ["open","in_progress","done"].forEach(function(s) {
+      bodyHtml += '<option value="' + s + '"' + ((item.status || "open") === s ? ' selected' : '') + '>' + TODO_STATUSES[s] + '</option>';
+    });
+    bodyHtml += '</select>';
+    bodyHtml += '<button class="todo-delete-btn" onclick="removeTodoItem(\'' + id + '\',' + idx + ')" title="削除">&#128465;</button>';
+    bodyHtml += '</div>';
   });
   bodyHtml += '</div>';
-  bodyHtml += '<div class="todo-add"><input type="text" id="todoNewText" placeholder="やることを入力" onkeydown="if(event.key===\'Enter\')addTodoItem(\'' + id + '\')"><button onclick="addTodoItem(\'' + id + '\')">追加</button></div>';
+  bodyHtml += '<div class="todo-add"><input type="text" id="todoNewText" placeholder="やることを入力" onkeydown="if(event.key===\'Enter\')addTodoItemLocal(\'' + id + '\')"><button onclick="addTodoItemLocal(\'' + id + '\')">追加</button></div>';
+  bodyHtml += '<button class="modal-save-btn" onclick="saveLongTermTodos(\'' + id + '\')">保存</button>';
   document.getElementById("modalBody").innerHTML = bodyHtml;
   document.getElementById("modalActions").innerHTML = '';
   document.getElementById("taskModal").classList.remove("hidden");
 }
 
-async function updateLongTermStatus(id, val) {
+function updateLongTermField(id, field, val) {
   var t = allTasks.find(function(x) { return x.id === id; });
-  if (t) { t.status = val; await apiCall("POST", "/api/dashboard/tasks/" + id, { status: val }); renderAll(); openLongTermModal(id); }
+  if (t) t[field] = val;
 }
 
-async function addTodoItem(taskId) {
+function addTodoItemLocal(taskId) {
   var inp = document.getElementById("todoNewText");
   var text = inp.value.trim();
   if (!text) return;
   var t = allTasks.find(function(x) { return x.id === taskId; });
   if (!t) return;
-  var todos = t.todos || [];
-  todos.push({ text: text, date: today(), done: false });
-  t.todos = todos;
-  await apiCall("POST", "/api/dashboard/tasks/" + taskId, { todos: todos });
-  renderAll();
+  if (!t.todos) t.todos = [];
+  t.todos.push({ text: text, date: today(), status: "open" });
   openLongTermModal(taskId);
 }
 
-async function toggleTodoItem(taskId, idx) {
+function changeTodoField(taskId, idx, field, val) {
+  var t = allTasks.find(function(x) { return x.id === taskId; });
+  if (!t || !t.todos || !t.todos[idx]) return;
+  t.todos[idx][field] = val;
+}
+
+function removeTodoItem(taskId, idx) {
   var t = allTasks.find(function(x) { return x.id === taskId; });
   if (!t || !t.todos) return;
-  t.todos[idx].done = !t.todos[idx].done;
-  await apiCall("POST", "/api/dashboard/tasks/" + taskId, { todos: t.todos });
-  renderAll();
+  t.todos.splice(idx, 1);
   openLongTermModal(taskId);
+}
+
+async function saveLongTermTodos(taskId) {
+  var t = allTasks.find(function(x) { return x.id === taskId; });
+  if (!t) return;
+  try {
+    await apiCall("POST", "/api/dashboard/tasks/" + taskId, { status: t.status, todos: t.todos || [] });
+    renderAll();
+    closeModal();
+  } catch (e) { alert("保存に失敗しました: " + e.message); }
 }
 
 function renderSection(title, tasks, dotColor, categoryKey) {
