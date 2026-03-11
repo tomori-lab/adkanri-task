@@ -320,8 +320,11 @@ async function handleGetDashboardTasks(request, env) {
   const myId = Number(env.MY_ACCOUNT_ID || 0);
   const room2 = env.CHATWORK_ROOM_2 || '';
 
-  const rooms = [cfg.roomId];
-  if (room2 && room2 !== cfg.roomId) rooms.push(room2);
+  const roomSet = new Set();
+  if (cfg.roomId) roomSet.add(cfg.roomId);
+  if (room2) roomSet.add(room2);
+  roomSet.add(DASHBOARD_ROOM_ID);
+  const rooms = [...roomSet];
 
   const local = await getDashboardLocal(env);
   const allTasksList = [];
