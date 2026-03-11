@@ -126,6 +126,20 @@
   .display-toggle { display: flex; gap: 4px; margin-bottom: 16px; }
   .display-toggle button { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 12px; cursor: pointer; }
   .display-toggle button.active { background: rgba(59,130,246,.2); color: var(--accent); border-color: var(--accent); }
+  .view-toggle { display: inline-flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 2px; gap: 2px; }
+  .view-toggle button { display: flex; align-items: center; justify-content: center; width: 32px; height: 28px; border: none; border-radius: 8px; background: transparent; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .view-toggle button.active { background: var(--accent); color: white; }
+  .view-toggle button:hover:not(.active) { background: rgba(59,130,246,.1); }
+  .task-list-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .task-list-table th { text-align: left; padding: 8px 10px; font-weight: 600; color: var(--text2); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .task-list-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .task-list-row:hover { background: rgba(255,255,255,.03); }
+  .task-list-row.overdue .tl-date { color: var(--red); }
+  .task-list-row.due-today .tl-date { color: var(--accent); }
+  .task-list-row.due-soon .tl-date { color: var(--yellow); }
+  .tl-title { font-weight: 500; color: var(--text1); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tl-date small { opacity: .7; }
+  .task-list-table select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface2); color: var(--text1); }
   .empty-state { padding: 40px 24px; text-align: center; color: var(--text2); font-size: 14px; line-height: 1.8; }
   .api-error-banner { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: var(--red); padding: 10px 16px; font-size: 13px; margin: 0 24px 16px; border-radius: 8px; }
   .add-task-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 8px; border: 1px dashed var(--border); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; transition: all .2s; }
@@ -340,9 +354,19 @@
     <div class="panel" id="panel-tasks">
       <div id="apiErrorBanner" class="api-error-banner" style="display:none;"></div>
       <main>
-        <div class="display-toggle" id="displayToggle" style="display:none;">
-          <button class="active" data-mode="status" onclick="setDisplayMode('status')">ステータス別</button>
-          <button data-mode="priority" onclick="setDisplayMode('priority')">優先度別</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="display-toggle" id="displayToggle" style="display:none;margin-bottom:0;">
+            <button class="active" data-mode="status" onclick="setDisplayMode('status')">ステータス別</button>
+            <button data-mode="priority" onclick="setDisplayMode('priority')">優先度別</button>
+          </div>
+          <div class="view-toggle" id="viewToggle" style="display:none;">
+            <button class="active" data-view="card" onclick="setViewMode('card')" title="カード表示">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button data-view="list" onclick="setViewMode('list')" title="リスト表示">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="2" height="2" rx="0.5"/><rect x="5" y="2" width="10" height="2" rx="0.5"/><rect x="1" y="7" width="2" height="2" rx="0.5"/><rect x="5" y="7" width="10" height="2" rx="0.5"/><rect x="1" y="12" width="2" height="2" rx="0.5"/><rect x="5" y="12" width="10" height="2" rx="0.5"/></svg>
+            </button>
+          </div>
         </div>
         <div id="app"><div class="empty-state">タスク管理を開くには左メニューから「タスク管理」を選択してください</div></div>
       </main>
@@ -777,7 +801,7 @@ var CATEGORY_COLORS = { tsunagikomi: "var(--accent)", sheet: "var(--green)", num
 var GENRE_MAP = { all: null, tsunagikomi: "tsunagikomi", sheet: "sheet", number_match: "number_match", asp: "asp", other: "other", teiki: "teiki", long_term: "long_term" };
 
 var allTasks = [], peopleData = [], myId = null, apiError = null;
-var displayMode = "status", selectedPersonId = "all", selectedGenre = "all";
+var displayMode = "status", selectedPersonId = "all", selectedGenre = "all", viewMode = "card";
 var tasksLoaded = false;
 
 function normalizeCategory(cat) { return cat && CATEGORY_LABELS[cat] ? cat : "other"; }
@@ -788,6 +812,27 @@ function dueLabel(l) { if (!l) return "期限なし"; var diff = Math.round((new
 function cleanBody(body) { return (body || "").replace(/\[.*?\]/g, "").replace(/依頼がきました。対応お願いします！/g, "").replace(/【.*?】/g, "").trim().split("\n").filter(function(l) { return l.trim(); }).slice(0, 3).join("\n"); }
 
 function setDisplayMode(mode) { displayMode = mode; document.querySelectorAll(".display-toggle button[data-mode]").forEach(function(b) { b.classList.toggle("active", b.dataset.mode === mode); }); renderAll(); }
+function setViewMode(mode) { viewMode = mode; document.querySelectorAll(".view-toggle button[data-view]").forEach(function(b) { b.classList.toggle("active", b.dataset.view === mode); }); renderAll(); }
+
+function renderListTable(tasks) {
+  var STATUS_LABELS = { open: "未着手", in_progress: "着手中", waiting: "相手待ち", done: "完了" };
+  var html = '<table class="task-list-table"><thead><tr><th>タスク名</th><th>期日</th><th>優先度</th><th>ステータス</th><th>カテゴリ</th><th>メモ</th></tr></thead><tbody>';
+  tasks.forEach(function(t) {
+    var dl = dueLabel(t.limit), dc = dueClass(t.limit);
+    var pLabel = PRIORITY_LABELS[t.priority] || "中";
+    var pClass = t.priority || "medium";
+    html += '<tr class="task-list-row ' + dc + '" onclick="openModal(\'' + t.id + '\')" style="cursor:pointer;">';
+    html += '<td class="tl-title">' + esc(t.title) + '</td>';
+    html += '<td class="tl-date"><span class="date-label" onclick="event.stopPropagation();editDueDate(\'' + t.id + '\',this)">' + (t.limit || "なし") + ' <small>(' + dl + ')</small></span></td>';
+    html += '<td><select onclick="event.stopPropagation()" onchange="updateTask(\'' + t.id + '\',\'priority\',this.value);renderAll()"><option value="high"' + (t.priority==="high"?" selected":"") + '>高</option><option value="medium"' + (t.priority==="medium"||!t.priority?" selected":"") + '>中</option><option value="low"' + (t.priority==="low"?" selected":"") + '>低</option></select></td>';
+    html += '<td><select onclick="event.stopPropagation()" onchange="handleStatusChange(\'' + t.id + '\',this.value)"><option value="open"' + (t.localStatus==="open"?" selected":"") + '>未着手</option><option value="in_progress"' + (t.localStatus==="in_progress"?" selected":"") + '>着手中</option><option value="waiting"' + (t.localStatus==="waiting"?" selected":"") + '>相手待ち</option><option value="done"' + (t.localStatus==="done"?" selected":"") + '>完了</option></select></td>';
+    html += '<td><select onclick="event.stopPropagation()" onchange="handleCategoryChange(\'' + t.id + '\',this.value)">' + CATEGORY_ORDER.map(function(k){ return '<option value="' + k + '"' + (normalizeCategory(t.category)===k?" selected":"") + '>' + CATEGORY_LABELS[k] + '</option>'; }).join("") + '</select></td>';
+    html += '<td><input type="text" onclick="event.stopPropagation()" placeholder="メモ..." value="' + esc(t.note) + '" onchange="updateTask(\'' + t.id + '\',\'note\',this.value)" style="font-size:12px;width:120px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--text1);"></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
 function setGenre(genre) { selectedGenre = genre; document.querySelectorAll(".genre-btn").forEach(function(b) { b.classList.toggle("active", b.dataset.genre === genre); }); renderAll(); }
 function setPerson(id) { selectedPersonId = id; document.querySelectorAll(".person-btn").forEach(function(b) { var bid = b.dataset.id; b.classList.toggle("active", id === "all" ? bid === "all" : Number(bid) === id); }); loadAll(); }
 
@@ -1098,12 +1143,16 @@ async function saveLongTermTodos(taskId) {
 function renderSection(title, tasks, dotColor, categoryKey) {
   if (!tasks.length && categoryKey !== "teiki" && categoryKey !== "long_term") return "";
   var addBtn = (categoryKey === "teiki" || categoryKey === "long_term") ? '<button class="add-task-btn" onclick="addManualTask(\'' + categoryKey + '\')">＋ 追加</button>' : '';
-  return '<div class="section"><div class="section-header"><div class="section-dot" style="background:' + dotColor + '"></div><h2>' + title + '</h2><span class="section-count">' + tasks.length + '</span>' + addBtn + '</div><div class="cards">' + tasks.map(renderCard).join("") + '</div></div>';
+  var body = viewMode === "list" && categoryKey !== "teiki" && categoryKey !== "long_term"
+    ? renderListTable(tasks)
+    : '<div class="cards">' + tasks.map(renderCard).join("") + '</div>';
+  return '<div class="section"><div class="section-header"><div class="section-dot" style="background:' + dotColor + '"></div><h2>' + title + '</h2><span class="section-count">' + tasks.length + '</span>' + addBtn + '</div>' + body + '</div>';
 }
 
 function renderAll() {
   var isManualGenre = selectedGenre === "teiki" || selectedGenre === "long_term";
   document.getElementById("displayToggle").style.display = isManualGenre ? "none" : "flex";
+  document.getElementById("viewToggle").style.display = isManualGenre ? "none" : "flex";
 
   var tasksToShow = allTasks;
   if (GENRE_MAP[selectedGenre]) tasksToShow = allTasks.filter(function(t) { return normalizeCategory(t.category) === GENRE_MAP[selectedGenre]; });
