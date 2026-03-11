@@ -287,9 +287,15 @@
     <div class="panel" id="panel-tasks">
       <div id="apiErrorBanner" class="api-error-banner" style="display:none;"></div>
       <main>
-        <div class="display-toggle" id="displayToggle" style="display:none;">
-          <button class="active" data-mode="status" onclick="setDisplayMode('status')">ステータス別</button>
-          <button data-mode="category" onclick="setDisplayMode('category')">カテゴリ別</button>
+        <div style="display:none;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;" id="taskToolbar">
+          <div class="display-toggle" style="display:flex;margin-bottom:0;">
+            <button class="active" data-mode="status" onclick="setDisplayMode('status')">ステータス別</button>
+            <button data-mode="category" onclick="setDisplayMode('category')">カテゴリ別</button>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="add-task-btn" onclick="addManualTask('teiki')">＋ 定期タスク</button>
+            <button class="add-task-btn" onclick="addManualTask('long_term')">＋ 長期タスク</button>
+          </div>
         </div>
         <div id="app"><div class="empty-state">タスク管理を開くには左メニューから「タスク管理」を選択してください</div></div>
       </main>
@@ -707,7 +713,7 @@ function dueClass(l) { if (!l) return ""; var diff = (new Date(l) - new Date(tod
 function dueLabel(l) { if (!l) return "期限なし"; var diff = Math.round((new Date(l) - new Date(today())) / 86400000); return diff < 0 ? Math.abs(diff) + "日超過" : diff === 0 ? "今日" : diff === 1 ? "明日" : diff + "日後"; }
 function cleanBody(body) { return (body || "").replace(/\[.*?\]/g, "").replace(/依頼がきました。対応お願いします！/g, "").replace(/【.*?】/g, "").trim().split("\n").filter(function(l) { return l.trim(); }).slice(0, 3).join("\n"); }
 
-function setDisplayMode(mode) { displayMode = mode; document.querySelectorAll(".display-toggle button").forEach(function(b) { b.classList.toggle("active", b.dataset.mode === mode); }); renderAll(); }
+function setDisplayMode(mode) { displayMode = mode; document.querySelectorAll(".display-toggle button[data-mode]").forEach(function(b) { b.classList.toggle("active", b.dataset.mode === mode); }); renderAll(); }
 function setGenre(genre) { selectedGenre = genre; document.querySelectorAll(".genre-btn").forEach(function(b) { b.classList.toggle("active", b.dataset.genre === genre); }); renderAll(); }
 function setPerson(id) { selectedPersonId = id; document.querySelectorAll(".person-btn").forEach(function(b) { b.classList.toggle("active", Number(b.dataset.id) === id); }); loadAll(); }
 
@@ -774,7 +780,7 @@ function renderSection(title, tasks, dotColor, categoryKey) {
 }
 
 function renderAll() {
-  document.getElementById("displayToggle").style.display = allTasks.length > 0 ? "flex" : "none";
+  document.getElementById("taskToolbar").style.display = "flex";
   var tasksToShow = allTasks;
   if (GENRE_MAP[selectedGenre]) tasksToShow = allTasks.filter(function(t) { return normalizeCategory(t.category) === GENRE_MAP[selectedGenre]; });
   var active = tasksToShow.filter(function(t) { return t.localStatus !== "done"; });
