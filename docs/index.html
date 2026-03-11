@@ -441,8 +441,8 @@ function apiCall(method, path, body) {
   });
 }
 
-function handleCredentialResponse(response) {
-  authToken = response.credential;
+function applyAuth(token) {
+  authToken = token;
   var payload = decodeJwt(authToken);
   currentUser = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || null };
   document.getElementById("sidebarUser").textContent = currentUser.email;
@@ -454,8 +454,28 @@ function handleCredentialResponse(response) {
   }
   avatar.title = currentUser.name;
   document.getElementById("authOverlay").classList.add("hidden");
+}
+
+function handleCredentialResponse(response) {
+  sessionStorage.setItem("authToken", response.credential);
+  applyAuth(response.credential);
   checkRole();
 }
+
+(function restoreSession() {
+  var saved = sessionStorage.getItem("authToken");
+  if (saved) {
+    try {
+      var payload = decodeJwt(saved);
+      if (Date.now() / 1000 < payload.exp - 60) {
+        applyAuth(saved);
+        checkRole();
+        return;
+      }
+    } catch (_) {}
+    sessionStorage.removeItem("authToken");
+  }
+})();
 
 async function checkRole() {
   try {
