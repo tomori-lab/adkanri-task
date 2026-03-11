@@ -930,8 +930,12 @@ function addManualTask(category) {
   document.getElementById("modalMeta").innerHTML = '';
   document.getElementById("modalActions").innerHTML = '';
 
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }];
   var bodyHtml = '';
   bodyHtml += '<div class="modal-form-group"><label>タスク名</label><input type="text" id="addTaskTitle" placeholder="タスク名を入力"></div>';
+  bodyHtml += '<div class="modal-form-group"><label>担当者</label><select id="addTaskAssignee">';
+  people.forEach(function(p) { bodyHtml += '<option value="' + p.id + '" data-name="' + esc(p.name) + '">' + esc(p.name) + '</option>'; });
+  bodyHtml += '</select></div>';
   if (category === 'teiki') {
     bodyHtml += '<div class="modal-form-group"><label>頻度</label><select id="addTaskFreq"><option value="daily">毎日</option><option value="weekly">毎週</option><option value="biweekly">隔週</option><option value="monthly" selected>毎月</option></select></div>';
   } else {
@@ -949,7 +953,10 @@ async function submitAddForm(category) {
   var title = document.getElementById("addTaskTitle").value.trim();
   if (!title) return;
   var noteEl = document.getElementById("addTaskNote");
-  var data = { title: title, category: category, status: "open", note: noteEl ? noteEl.value.trim() : "" };
+  var assigneeEl = document.getElementById("addTaskAssignee");
+  var selOpt = assigneeEl.options[assigneeEl.selectedIndex];
+  var data = { title: title, category: category, status: "open", note: noteEl ? noteEl.value.trim() : "",
+    assigneeId: assigneeEl.value, assigneeName: selOpt.getAttribute("data-name") || selOpt.text };
   if (category === "teiki") {
     data.frequency = document.getElementById("addTaskFreq").value;
     data.completedAt = null;
@@ -1025,7 +1032,8 @@ function renderTeikiCard(t) {
   });
   freqSelect += '</select>';
   var noteHtml = t.note ? '<div class="card-body" style="margin-top:4px;font-size:12px;color:var(--text2);">' + esc(t.note) + '</div>' : '';
-  return '<div class="card' + (isDone ? ' teiki-done' : '') + '" onclick="openTeikiModal(\'' + t.id + '\')"><div class="card-top"><button class="teiki-check' + (isDone ? ' done' : '') + '" onclick="event.stopPropagation();toggleTeikiComplete(\'' + t.id + '\')">' + (isDone ? '✓' : '') + '</button><div class="card-title" style="margin-left:8px;">' + esc(t.title) + '</div>' + freqSelect + '<button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">&#128465;</button></div>' + noteHtml + (isDone && t.nextDue ? '<div class="next-due">次回: ' + t.nextDue + '</div>' : '') + '</div>';
+  var assigneeHtml = t.assigneeName ? '<div style="font-size:11px;color:var(--text2);margin-top:4px;">担当: ' + esc(t.assigneeName) + '</div>' : '';
+  return '<div class="card' + (isDone ? ' teiki-done' : '') + '" onclick="openTeikiModal(\'' + t.id + '\')"><div class="card-top"><button class="teiki-check' + (isDone ? ' done' : '') + '" onclick="event.stopPropagation();toggleTeikiComplete(\'' + t.id + '\')">' + (isDone ? '✓' : '') + '</button><div class="card-title" style="margin-left:8px;">' + esc(t.title) + '</div>' + freqSelect + '<button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">&#128465;</button></div>' + assigneeHtml + noteHtml + (isDone && t.nextDue ? '<div class="next-due">次回: ' + t.nextDue + '</div>' : '') + '</div>';
 }
 
 function openTeikiModal(id) {
@@ -1071,7 +1079,8 @@ function renderLongTermCard(t) {
   var pct = total > 0 ? Math.round(doneCount / total * 100) : 0;
   var deadlineStr = t.deadline ? t.deadline : "期日未設定";
   var noteHtml = t.note ? '<div class="card-body" style="margin-top:4px;font-size:12px;color:var(--text2);">' + esc(t.note) + '</div>' : '';
-  return '<div class="card" onclick="openLongTermModal(\'' + t.id + '\')"><div class="card-top"><div class="card-title">' + esc(t.title) + '</div><button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">&#128465;</button></div><div class="card-meta"><span>' + deadlineStr + '</span><span>' + (STATUS_LABELS_LT[t.status] || "未着手") + '</span></div>' + noteHtml + (total > 0 ? '<div class="todo-progress"><div class="todo-progress-text">やること: ' + doneCount + '/' + total + ' 完了</div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>' : '') + '</div>';
+  var assigneeHtml = t.assigneeName ? '<span>担当: ' + esc(t.assigneeName) + '</span>' : '';
+  return '<div class="card" onclick="openLongTermModal(\'' + t.id + '\')"><div class="card-top"><div class="card-title">' + esc(t.title) + '</div><button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">&#128465;</button></div><div class="card-meta"><span>' + deadlineStr + '</span><span>' + (STATUS_LABELS_LT[t.status] || "未着手") + '</span>' + assigneeHtml + '</div>' + noteHtml + (total > 0 ? '<div class="todo-progress"><div class="todo-progress-text">やること: ' + doneCount + '/' + total + ' 完了</div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>' : '') + '</div>';
 }
 
 var TODO_STATUSES = { open: "未着手", in_progress: "着手中", done: "完了" };
@@ -1175,7 +1184,13 @@ function renderAll() {
   document.getElementById("viewToggle").style.display = isManualGenre ? "none" : "flex";
 
   var tasksToShow = allTasks;
-  if (GENRE_MAP[selectedGenre]) tasksToShow = allTasks.filter(function(t) { return normalizeCategory(t.category) === GENRE_MAP[selectedGenre]; });
+  if (selectedPersonId !== "all" && isManualGenre) {
+    tasksToShow = allTasks.filter(function(t) {
+      if (t.isManual && t.assigneeId) return String(t.assigneeId) === String(selectedPersonId);
+      return true;
+    });
+  }
+  if (GENRE_MAP[selectedGenre]) tasksToShow = tasksToShow.filter(function(t) { return normalizeCategory(t.category) === GENRE_MAP[selectedGenre]; });
 
   var ps = function(a, b) { var m = { high: 0, medium: 1, low: 2 }; return (m[a.priority] ?? 1) - (m[b.priority] ?? 1); };
   var html = "";
