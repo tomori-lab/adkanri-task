@@ -976,7 +976,7 @@ function closeModal() { document.getElementById("taskModal").classList.add("hidd
 document.addEventListener("keydown", function(e) { if (e.key === "Escape" && currentModalId) closeModal(); });
 
 function buildAssigneeSelect(taskId, currentAssigneeId) {
-  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 9797164 }, { name: "\u53CB\u5229", id: 10034061 }, { name: "\u77F3\u7530", id: 5420288 }];
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 9797164 }, { name: "\u53CB\u5229", id: 10034061 }, { name: "\u77F3\u7530", id: 5420288 }, { name: "\u897F\u6751", id: 10696465 }];
   return '<select onchange="handleAssigneeChange(\'' + taskId + '\',this)">' + people.map(function(p) {
     return '<option value="' + p.id + '" data-name="' + esc(p.name) + '"' + (String(p.id) === String(currentAssigneeId) ? ' selected' : '') + '>' + esc(p.name) + '</option>';
   }).join("") + '</select>';
@@ -1025,7 +1025,7 @@ function addManualTask(category) {
   document.getElementById("modalMeta").innerHTML = '';
   document.getElementById("modalActions").innerHTML = '';
 
-  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }];
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }, { name: "\u897F\u6751", id: 0 }];
   var bodyHtml = '';
   bodyHtml += '<div class="modal-form-group"><label>タスク名</label><input type="text" id="addTaskTitle" placeholder="タスク名を入力"></div>';
   bodyHtml += '<div class="modal-form-group"><label>担当者</label><select id="addTaskAssignee">';
@@ -1291,7 +1291,7 @@ function renderAll() {
   var html = "";
 
   if (selectedPersonId === "all" && !isManualGenre && selectedGenre === "all") {
-    var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }];
+    var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }, { name: "\u897F\u6751", id: 0 }];
     var chatworkTasks = allTasks.filter(function(t) { return !t.isManual; });
     html += '<div class="summary-row">';
     people.forEach(function(p) {
@@ -1357,10 +1357,10 @@ function renderAll() {
   document.getElementById("app").innerHTML = html;
 }
 
-var PERSON_COLORS = { "\u7B52\u4E95": "#b8e986", "\u53CB\u5229": "#ffb3d9", "\u77F3\u7530": "#87ceeb" };
+var PERSON_COLORS = { "\u7B52\u4E95": "#b8e986", "\u53CB\u5229": "#ffb3d9", "\u77F3\u7530": "#87ceeb", "\u897F\u6751": "#f0c674" };
 function renderPersonButtons() {
   var row = document.getElementById("personRow");
-  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }];
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }, { name: "\u897F\u6751", id: 0 }];
   var activeId = selectedPersonId != null ? selectedPersonId : (myId != null ? myId : (people[0] ? people[0].id : null));
   var allActive = activeId === "all";
   var html = '<button class="person-btn ' + (allActive ? "active" : "") + '" data-id="all" style="--person-color:var(--accent)" onclick="setPerson(\'all\')">全員</button>';

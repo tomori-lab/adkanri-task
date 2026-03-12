@@ -292,6 +292,7 @@ const DEFAULT_PEOPLE = [
   { name: '\u7B52\u4E95', id: 9797164 },
   { name: '\u53CB\u5229', id: 10034061 },
   { name: '\u77F3\u7530', id: 5420288 },
+  { name: '\u897F\u6751', id: 10696465 },
 ];
 
 async function handleGetPeople(request, env) {
