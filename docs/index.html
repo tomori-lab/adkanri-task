@@ -976,7 +976,7 @@ function closeModal() { document.getElementById("taskModal").classList.add("hidd
 document.addEventListener("keydown", function(e) { if (e.key === "Escape" && currentModalId) closeModal(); });
 
 function buildAssigneeSelect(taskId, currentAssigneeId) {
-  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 9797164 }, { name: "\u53CB\u5229", id: 10034061 }, { name: "\u77F3\u7530", id: 5420288 }, { name: "\u897F\u6751", id: 10696465 }];
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 9797164 }, { name: "\u53CB\u5229", id: 10034061 }, { name: "\u77F3\u7530", id: 5420288 }, { name: "\u897F\u6751", id: 5420288 }];
   return '<select onchange="handleAssigneeChange(\'' + taskId + '\',this)">' + people.map(function(p) {
     return '<option value="' + p.id + '" data-name="' + esc(p.name) + '"' + (String(p.id) === String(currentAssigneeId) ? ' selected' : '') + '>' + esc(p.name) + '</option>';
   }).join("") + '</select>';
