@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260312f -->
+<html lang="ja"><!-- v20260312g -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -429,7 +429,7 @@
 <div class="modal-overlay hidden" id="taskModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modalTitle" class="modal-title-editable" title="クリックで編集"><span id="modalTitleText"></span><span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span></h2>
+      <h2 id="modalTitle" class="modal-title-editable" title="クリックで編集"><span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span><span id="modalTitleText"></span></h2>
       <button class="modal-close" onclick="closeModal()">&#10005;</button>
     </div>
     <div class="modal-body">
@@ -1166,7 +1166,7 @@ function editModalTitle() {
     if (val && val !== task.title) { task.title = val; updateTask(currentModalId, "title", val); }
     var newH2 = document.createElement("h2");
     newH2.id = "modalTitle"; newH2.className = "modal-title-editable"; newH2.title = "クリックで編集";
-    newH2.innerHTML = '<span id="modalTitleText">' + esc(task.title) + '</span><span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span>';
+    newH2.innerHTML = '<span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span><span id="modalTitleText">' + esc(task.title) + '</span>';
     input.replaceWith(newH2);
   }
   input.addEventListener("blur", save);
