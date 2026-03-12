@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260312e -->
+<html lang="ja"><!-- v20260312f -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -204,8 +204,9 @@
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 640px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
   .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
   .modal-header h2 { font-size: 18px; font-weight: 700; flex: 1; margin-right: 12px; line-height: 1.4; }
-  .modal-title-editable { cursor: pointer; border-radius: 6px; padding: 2px 6px; margin: -2px -6px; transition: background .2s; }
-  .modal-title-editable:hover { background: var(--surface2); }
+  .modal-title-editable { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 2px 6px; margin: -2px -6px; }
+  .modal-title-pencil { font-size: 15px; color: var(--text2); cursor: pointer; padding: 4px; border-radius: 6px; transition: all .2s; flex-shrink: 0; }
+  .modal-title-pencil:hover { color: var(--accent); background: rgba(59,130,246,.1); }
   .modal-title-input { width: 100%; font-size: 18px; font-weight: 700; border: 1.5px solid var(--accent); border-radius: 8px; background: var(--surface2); color: var(--text); padding: 6px 10px; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
   .modal-close { background: transparent; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; transition: all .2s; }
   .modal-close:hover { background: var(--surface2); color: var(--text); }
@@ -428,7 +429,7 @@
 <div class="modal-overlay hidden" id="taskModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modalTitle" class="modal-title-editable" onclick="editModalTitle()" title="クリックで編集"></h2>
+      <h2 id="modalTitle" class="modal-title-editable" title="クリックで編集"><span id="modalTitleText"></span><span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span></h2>
       <button class="modal-close" onclick="closeModal()">&#10005;</button>
     </div>
     <div class="modal-body">
@@ -1089,7 +1090,7 @@ function buildModalAssigneeSelect(currentAssigneeId) {
 function openModal(id) {
   var task = allTasks.find(function(t) { return t.id === id; }); if (!task) return;
   currentModalId = id;
-  document.getElementById("modalTitle").textContent = task.title;
+  setModalTitle(task.title);
 
   var metaHtml = '<span>' + (task.limit ? task.limit + ' (' + dueLabel(task.limit) + ')' : '期限なし') + '</span>';
   metaHtml += '<span>' + CATEGORY_LABELS[normalizeCategory(task.category)] + '</span>';
@@ -1145,6 +1146,13 @@ async function saveModalTask(id) {
   await apiCall("POST", "/api/dashboard/tasks/" + id, updates);
   renderAll(); closeModal();
 }
+function setModalTitle(text, hidePencil) {
+  var textEl = document.getElementById("modalTitleText");
+  var pencilEl = document.querySelector(".modal-title-pencil");
+  if (textEl) textEl.textContent = text;
+  if (pencilEl) pencilEl.style.display = hidePencil ? "none" : "";
+}
+
 function editModalTitle() {
   if (!currentModalId) return;
   var h2 = document.getElementById("modalTitle");
@@ -1157,9 +1165,8 @@ function editModalTitle() {
     var val = input.value.trim();
     if (val && val !== task.title) { task.title = val; updateTask(currentModalId, "title", val); }
     var newH2 = document.createElement("h2");
-    newH2.id = "modalTitle"; newH2.className = "modal-title-editable";
-    newH2.onclick = editModalTitle; newH2.title = "クリックで編集";
-    newH2.textContent = task.title;
+    newH2.id = "modalTitle"; newH2.className = "modal-title-editable"; newH2.title = "クリックで編集";
+    newH2.innerHTML = '<span id="modalTitleText">' + esc(task.title) + '</span><span class="modal-title-pencil" onclick="editModalTitle()">&#9998;</span>';
     input.replaceWith(newH2);
   }
   input.addEventListener("blur", save);
@@ -1214,7 +1221,7 @@ function editDueDate(id, el) {
 function addManualTask(category) {
   currentModalId = null;
   var label = CATEGORY_LABELS[category] || category;
-  document.getElementById("modalTitle").textContent = label + "を追加";
+  setModalTitle(label + "を追加", true);
   document.getElementById("modalMeta").innerHTML = '';
   document.getElementById("modalActions").innerHTML = '';
 
@@ -1365,7 +1372,7 @@ function openTeikiModal(id) {
   var t = allTasks.find(function(x) { return x.id === id; });
   if (!t) return;
   currentModalId = id;
-  document.getElementById("modalTitle").textContent = t.title;
+  setModalTitle(t.title);
   var metaHtml = '<span>' + getFreqLabel(t.frequency) + '</span>';
   metaHtml += '<span>' + (t.status === "done" ? "完了" : "未完了") + '</span>';
   if (t.nextDue) metaHtml += '<span>次回: ' + t.nextDue + '</span>';
@@ -1467,7 +1474,7 @@ function openLongTermModal(id) {
   var t = allTasks.find(function(x) { return x.id === id; });
   if (!t) return;
   currentModalId = id;
-  document.getElementById("modalTitle").textContent = t.title;
+  setModalTitle(t.title);
   var todos = t.todos || [];
 
   var metaHtml = '<span>' + (t.deadline || "期日未設定") + '</span>';
