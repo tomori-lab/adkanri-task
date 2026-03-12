@@ -688,8 +688,7 @@ function getChatworkConfig(env) {
 
 function resolveAssigneeName(env, formData) {
   const cfg = getChatworkConfig(env);
-  const bh = isBusinessHours();
-  const toId = !bh ? cfg.allUserIds : hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, bh);
+  const toId = hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, true);
   const ids = String(toId).split(',');
   const names = ids.map((id) => { const p = DEFAULT_PEOPLE.find((pp) => String(pp.id) === id.trim()); return p ? p.name : id.trim(); });
   return names.join(', ');
@@ -720,10 +719,16 @@ function hasLineYahooMedia(formData) {
   return false;
 }
 
+const NOTIFY_MEMBERS = [
+  { name: '\u7B52\u4E95', id: 9797164 },
+  { name: '\u53CB\u5229', id: 10034061 },
+  { name: '\u897F\u6751', id: 5420288 },
+];
+
 async function sendChatworkTask(formData, reqId, env) {
   const cfg = getChatworkConfig(env);
   const bh = isBusinessHours();
-  const toId = !bh ? cfg.allUserIds : hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, bh);
+  const toId = hasLineYahooMedia(formData) ? LINE_YAHOO_ASSIGNEE : resolveAssignee(cfg, formData.category, true);
 
   const subLabel = formData.subCategory || formData.category;
   const fieldLines = [];
@@ -740,7 +745,6 @@ async function sendChatworkTask(formData, reqId, env) {
 
   // ダッシュボード用ルーム (333632829) — メインのタスク
   let dashBody = '\u4F9D\u983C\u304C\u304D\u307E\u3057\u305F\u3002\u5BFE\u5FDC\u304A\u9858\u3044\u3057\u307E\u3059\uFF01';
-  if (!bh) dashBody += '\n\u26A0\uFE0F \u55B6\u696D\u6642\u9593\u5916\u306E\u305F\u3081\u5168\u54E1\u306B\u30BF\u30B9\u30AF\u5316\u3057\u3066\u3044\u307E\u3059';
   dashBody += infoBlock;
 
   const dashRes = await fetch(`https://api.chatwork.com/v2/rooms/${DASHBOARD_ROOM_ID}/tasks`, {
@@ -775,7 +779,22 @@ async function sendChatworkTask(formData, reqId, env) {
     } catch (_) {}
   }
 
-  if (dashResult.task_ids && dashResult.task_ids[0]) return dashResult.task_ids[0];
+  const taskId = dashResult.task_ids && dashResult.task_ids[0] ? dashResult.task_ids[0] : null;
+
+  if (!bh && taskId) {
+    try {
+      const toMentions = NOTIFY_MEMBERS.map((m) => '[To:' + m.id + '] ' + m.name + '\u3055\u3093').join('\n');
+      let notifyBody = toMentions + '\n\u4E0B\u8A18\u30BF\u30B9\u30AF\u5BFE\u5FDC\u304A\u9858\u3044\u3057\u307E\u3059\u3002';
+      notifyBody += infoBlock;
+      await fetch(`https://api.chatwork.com/v2/rooms/${DASHBOARD_ROOM_ID}/messages`, {
+        method: 'POST',
+        headers: { 'X-ChatWorkToken': cfg.apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'body=' + encodeURIComponent(notifyBody),
+      });
+    } catch (_) {}
+  }
+
+  if (taskId) return taskId;
   throw new Error('\u30C1\u30E3\u30C3\u30C8\u30EF\u30FC\u30AF\u901A\u77E5\u306B\u5931\u6557\u3057\u307E\u3057\u305F: ' + JSON.stringify(dashResult));
 }
 
