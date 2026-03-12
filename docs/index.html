@@ -875,7 +875,7 @@ function setViewMode(mode) { viewMode = mode; document.querySelectorAll(".view-t
 
 function renderListTable(tasks) {
   var STATUS_LABELS = { open: "未着手", in_progress: "着手中", waiting: "相手待ち", done: "完了" };
-  var html = '<table class="task-list-table"><thead><tr><th>タスク名</th><th>期日</th><th>優先度</th><th>ステータス</th><th>カテゴリ</th><th>メモ</th></tr></thead><tbody>';
+  var html = '<table class="task-list-table"><thead><tr><th>タスク名</th><th>期日</th><th>担当</th><th>優先度</th><th>ステータス</th><th>カテゴリ</th><th>メモ</th></tr></thead><tbody>';
   tasks.forEach(function(t) {
     var dl = dueLabel(t.limit), dc = dueClass(t.limit);
     var pLabel = PRIORITY_LABELS[t.priority] || "中";
@@ -884,6 +884,7 @@ function renderListTable(tasks) {
     html += '<tr class="task-list-row ' + dc + ' ' + pc + '" onclick="openModal(\'' + t.id + '\')" style="cursor:pointer;">';
     html += '<td class="tl-title">' + esc(t.title) + '</td>';
     html += '<td class="tl-date"><span class="date-label" onclick="event.stopPropagation();editDueDate(\'' + t.id + '\',this)">' + (t.limit || "なし") + ' <small>(' + dl + ')</small></span></td>';
+    html += '<td onclick="event.stopPropagation()">' + buildAssigneeSelect(t.id, t.assigneeId) + '</td>';
     html += '<td><select onclick="event.stopPropagation()" onchange="updateTask(\'' + t.id + '\',\'priority\',this.value);renderAll()"><option value="high"' + (t.priority==="high"?" selected":"") + '>高</option><option value="medium"' + (t.priority==="medium"||!t.priority?" selected":"") + '>中</option><option value="low"' + (t.priority==="low"?" selected":"") + '>低</option></select></td>';
     html += '<td><select onclick="event.stopPropagation()" onchange="handleStatusChange(\'' + t.id + '\',this.value)"><option value="open"' + (t.localStatus==="open"?" selected":"") + '>未着手</option><option value="in_progress"' + (t.localStatus==="in_progress"?" selected":"") + '>着手中</option><option value="waiting"' + (t.localStatus==="waiting"?" selected":"") + '>相手待ち</option><option value="done"' + (t.localStatus==="done"?" selected":"") + '>完了</option></select></td>';
     html += '<td><select onclick="event.stopPropagation()" onchange="handleCategoryChange(\'' + t.id + '\',this.value)">' + CATEGORY_ORDER.map(function(k){ return '<option value="' + k + '"' + (normalizeCategory(t.category)===k?" selected":"") + '>' + CATEGORY_LABELS[k] + '</option>'; }).join("") + '</select></td>';
@@ -925,6 +926,17 @@ function setGenre(genre) { selectedGenre = genre; document.querySelectorAll(".ge
 function setPerson(id) { selectedPersonId = id; document.querySelectorAll(".person-btn").forEach(function(b) { var bid = b.dataset.id; b.classList.toggle("active", id === "all" ? bid === "all" : Number(bid) === id); }); loadAll(); }
 
 async function updateTask(id, field, value) { await apiCall("POST", "/api/dashboard/tasks/" + id, { [field]: value }); }
+function handleAssigneeChange(id, selectEl) {
+  var t = allTasks.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var opt = selectEl.options[selectEl.selectedIndex];
+  var newId = Number(selectEl.value);
+  var newName = opt.getAttribute("data-name") || opt.text;
+  t.assigneeId = newId;
+  t.assigneeName = newName;
+  apiCall("POST", "/api/dashboard/tasks/" + id, { assigneeId: newId, assigneeName: newName });
+  renderAll();
+}
 function handleStatusChange(id, val) {
   var t = allTasks.find(function(x) { return x.id === id; });
   var payload = { localStatus: val };
@@ -956,17 +968,25 @@ function openModal(id) {
   document.getElementById("modalActions").innerHTML =
     '<select onchange="handleStatusChange(\'' + id + '\',this.value);openModal(\'' + id + '\')"><option value="open"' + (task.localStatus==="open"?" selected":"") + '>未着手</option><option value="in_progress"' + (task.localStatus==="in_progress"?" selected":"") + '>着手中</option><option value="waiting"' + (task.localStatus==="waiting"?" selected":"") + '>相手待ち</option><option value="done"' + (task.localStatus==="done"?" selected":"") + '>完了</option></select>' +
     '<select onchange="handleCategoryChange(\'' + id + '\',this.value);openModal(\'' + id + '\')">' + CATEGORY_ORDER.map(function(k) { return '<option value="' + k + '"' + (normalizeCategory(task.category)===k?" selected":"") + '>' + CATEGORY_LABELS[k] + '</option>'; }).join("") + '</select>' +
+    buildAssigneeSelect(id, task.assigneeId) +
     '<input type="text" placeholder="メモ..." value="' + esc(task.note) + '" onchange="updateTask(\'' + id + '\',\'note\',this.value);allTasks.find(function(t){return t.id===\'' + id + '\'}).note=this.value">';
   document.getElementById("taskModal").classList.remove("hidden");
 }
 function closeModal() { document.getElementById("taskModal").classList.add("hidden"); currentModalId = null; }
 document.addEventListener("keydown", function(e) { if (e.key === "Escape" && currentModalId) closeModal(); });
 
+function buildAssigneeSelect(taskId, currentAssigneeId) {
+  var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 9797164 }, { name: "\u53CB\u5229", id: 10034061 }, { name: "\u77F3\u7530", id: 5420288 }];
+  return '<select onchange="handleAssigneeChange(\'' + taskId + '\',this)">' + people.map(function(p) {
+    return '<option value="' + p.id + '" data-name="' + esc(p.name) + '"' + (String(p.id) === String(currentAssigneeId) ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+  }).join("") + '</select>';
+}
+
 function renderCard(t) {
   var dc = dueClass(t.limit), dl = dueLabel(t.limit), body = cleanBody(t.body);
   var pc = 'priority-' + (t.priority || 'medium');
   var deleteBtn = t.isManual ? '<button class="delete-task-btn" onclick="event.stopPropagation();deleteManualTask(\'' + t.id + '\')" title="削除">🗑️</button>' : '';
-  return '<div class="card ' + dc + ' ' + pc + '" onclick="openModal(\'' + t.id + '\')"><div class="card-top"><div class="card-title-row"><button class="edit-title-btn" onclick="event.stopPropagation();editTitle(\'' + t.id + '\',this)" title="編集">&#9998;</button><div class="card-title">' + esc(t.title) + '</div></div>' + deleteBtn + '<div class="card-priority ' + t.priority + '">' + (PRIORITY_LABELS[t.priority]||"中") + '</div></div><div class="card-meta"><span class="date-label" onclick="event.stopPropagation();editDueDate(\'' + t.id + '\',this)" title="クリックで期日変更">' + (t.limit||"期限なし") + ' (' + dl + ')</span><span>' + CATEGORY_LABELS[normalizeCategory(t.category)] + '</span>' + (t.assignedBy?'<span>by ' + esc(t.assignedBy) + '</span>':'') + '</div>' + (body ? '<div class="card-body">' + esc(body) + '</div>' : '') + '<div class="card-actions" onclick="event.stopPropagation()"><select onchange="updateTask(\'' + t.id + '\',\'priority\',this.value);this.closest(\'.card\').querySelector(\'.card-priority\').className=\'card-priority \'+this.value;this.closest(\'.card\').querySelector(\'.card-priority\').textContent={high:\'高\',medium:\'中\',low:\'低\'}[this.value]"><option value="high"' + (t.priority==="high"?" selected":"") + '>高</option><option value="medium"' + (t.priority==="medium"?" selected":"") + '>中</option><option value="low"' + (t.priority==="low"?" selected":"") + '>低</option></select><select onchange="handleStatusChange(\'' + t.id + '\',this.value)"><option value="open"' + (t.localStatus==="open"?" selected":"") + '>未着手</option><option value="in_progress"' + (t.localStatus==="in_progress"?" selected":"") + '>着手中</option><option value="waiting"' + (t.localStatus==="waiting"?" selected":"") + '>相手待ち</option><option value="done"' + (t.localStatus==="done"?" selected":"") + '>完了</option></select><select onchange="handleCategoryChange(\'' + t.id + '\',this.value)">' + CATEGORY_ORDER.map(function(k){ return '<option value="' + k + '"' + (normalizeCategory(t.category)===k?" selected":"") + '>' + CATEGORY_LABELS[k] + '</option>'; }).join("") + '</select><input type="text" placeholder="メモ..." value="' + esc(t.note) + '" onchange="updateTask(\'' + t.id + '\',\'note\',this.value)"></div></div>';
+  return '<div class="card ' + dc + ' ' + pc + '" onclick="openModal(\'' + t.id + '\')"><div class="card-top"><div class="card-title-row"><button class="edit-title-btn" onclick="event.stopPropagation();editTitle(\'' + t.id + '\',this)" title="編集">&#9998;</button><div class="card-title">' + esc(t.title) + '</div></div>' + deleteBtn + '<div class="card-priority ' + t.priority + '">' + (PRIORITY_LABELS[t.priority]||"中") + '</div></div><div class="card-meta"><span class="date-label" onclick="event.stopPropagation();editDueDate(\'' + t.id + '\',this)" title="クリックで期日変更">' + (t.limit||"期限なし") + ' (' + dl + ')</span><span>' + CATEGORY_LABELS[normalizeCategory(t.category)] + '</span>' + (t.assignedBy?'<span>by ' + esc(t.assignedBy) + '</span>':'') + '</div>' + (body ? '<div class="card-body">' + esc(body) + '</div>' : '') + '<div class="card-actions" onclick="event.stopPropagation()"><select onchange="updateTask(\'' + t.id + '\',\'priority\',this.value);this.closest(\'.card\').querySelector(\'.card-priority\').className=\'card-priority \'+this.value;this.closest(\'.card\').querySelector(\'.card-priority\').textContent={high:\'高\',medium:\'中\',low:\'低\'}[this.value]"><option value="high"' + (t.priority==="high"?" selected":"") + '>高</option><option value="medium"' + (t.priority==="medium"?" selected":"") + '>中</option><option value="low"' + (t.priority==="low"?" selected":"") + '>低</option></select><select onchange="handleStatusChange(\'' + t.id + '\',this.value)"><option value="open"' + (t.localStatus==="open"?" selected":"") + '>未着手</option><option value="in_progress"' + (t.localStatus==="in_progress"?" selected":"") + '>着手中</option><option value="waiting"' + (t.localStatus==="waiting"?" selected":"") + '>相手待ち</option><option value="done"' + (t.localStatus==="done"?" selected":"") + '>完了</option></select><select onchange="handleCategoryChange(\'' + t.id + '\',this.value)">' + CATEGORY_ORDER.map(function(k){ return '<option value="' + k + '"' + (normalizeCategory(t.category)===k?" selected":"") + '>' + CATEGORY_LABELS[k] + '</option>'; }).join("") + '</select>' + buildAssigneeSelect(t.id, t.assigneeId) + '<input type="text" placeholder="メモ..." value="' + esc(t.note) + '" onchange="updateTask(\'' + t.id + '\',\'note\',this.value)"></div></div>';
 }
 
 function editDueDate(id, el) {
