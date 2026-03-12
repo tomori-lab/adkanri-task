@@ -53,10 +53,8 @@
   .sub-sidebar.hidden { width: 0; padding: 0; overflow: hidden; border-right: none; opacity: 0; }
   .sub-sidebar-title { font-size: 12px; font-weight: 700; color: var(--text2); padding: 8px 14px 6px; text-transform: uppercase; letter-spacing: .5px; }
 
-  .person-row { display: flex; flex-wrap: nowrap; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  .person-btn { flex: 1; min-width: 0; padding: 8px 4px; border-radius: 6px; border: 2px solid transparent; background: var(--surface2); color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; text-align: center; }
-  .person-btn:hover { color: var(--text); background: rgba(255,255,255,.12); }
-  .person-btn.active { color: var(--text); border-color: var(--person-color, var(--accent)); }
+  .person-row { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .person-select { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; appearance: auto; }
 
   .genre-list { padding: 4px 0; display: flex; flex-direction: column; gap: 1px; flex: 1; }
   .genre-btn { display: block; width: 100%; padding: 8px 14px; border: none; border-left: 3px solid transparent; background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 500; text-align: left; transition: all .2s; }
@@ -923,7 +921,7 @@ function renderManualListTable(tasks, genre) {
 }
 
 function setGenre(genre) { selectedGenre = genre; document.querySelectorAll(".genre-btn").forEach(function(b) { b.classList.toggle("active", b.dataset.genre === genre); }); renderAll(); }
-function setPerson(id) { selectedPersonId = id; document.querySelectorAll(".person-btn").forEach(function(b) { var bid = b.dataset.id; b.classList.toggle("active", id === "all" ? bid === "all" : Number(bid) === id); }); loadAll(); }
+function setPerson(id) { selectedPersonId = id; loadAll(); }
 
 async function updateTask(id, field, value) { await apiCall("POST", "/api/dashboard/tasks/" + id, { [field]: value }); }
 function handleAssigneeChange(id, selectEl) {
@@ -1362,12 +1360,12 @@ function renderPersonButtons() {
   var row = document.getElementById("personRow");
   var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }, { name: "\u897F\u6751", id: 0 }];
   var activeId = selectedPersonId != null ? selectedPersonId : (myId != null ? myId : (people[0] ? people[0].id : null));
-  var allActive = activeId === "all";
-  var html = '<button class="person-btn ' + (allActive ? "active" : "") + '" data-id="all" style="--person-color:var(--accent)" onclick="setPerson(\'all\')">全員</button>';
+  var html = '<select class="person-select" onchange="setPerson(this.value===\'all\'?\'all\':Number(this.value))">';
+  html += '<option value="all"' + (activeId === "all" ? ' selected' : '') + '>全員</option>';
   html += people.map(function(p) {
-    var color = PERSON_COLORS[p.name] || "var(--accent)";
-    return '<button class="person-btn ' + (!allActive && p.id === activeId ? "active" : "") + '" data-id="' + p.id + '" style="--person-color:' + color + '" onclick="setPerson(' + p.id + ')">' + esc(p.name) + '</button>';
+    return '<option value="' + p.id + '"' + (activeId !== "all" && p.id === activeId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
   }).join("");
+  html += '</select>';
   row.innerHTML = html;
 }
 
