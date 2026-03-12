@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260312c -->
+<html lang="ja"><!-- v20260312d -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -220,7 +220,7 @@
   .modal-field select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; transition: border-color .2s, box-shadow .2s; }
   .modal-field select:hover { border-color: var(--accent); }
   .modal-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
-  .modal-task-body { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.7; color: var(--text2); word-break: break-word; }
+  .modal-task-body { background: linear-gradient(135deg, rgba(59,130,246,.06), rgba(139,92,246,.06)); border: 1.5px solid rgba(59,130,246,.25); border-left: 4px solid var(--accent); border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.8; color: var(--text); word-break: break-word; }
   .modal-btn-row { display: flex; gap: 10px; margin-top: 8px; }
   .modal-btn-save { flex: 1; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
   .modal-btn-save:hover { opacity: .88; }
@@ -1093,7 +1093,8 @@ function openModal(id) {
   if (task.assignedBy) metaHtml += '<span>by ' + esc(task.assignedBy) + '</span>';
   document.getElementById("modalMeta").innerHTML = metaHtml;
 
-  var bodyHtml = '<div class="modal-task-body">' + esc(task.body || "(本文なし)") + '</div>';
+  var bodyHtml = '<div class="modal-field-label" style="margin-bottom:6px;">タスク内容</div>';
+  bodyHtml += '<div class="modal-task-body">' + esc(task.body || "(本文なし)").replace(/\[.*?\]/g, '').trim() + '</div>';
 
   bodyHtml += '<div class="modal-field-row">';
   bodyHtml += '<div class="modal-field"><div class="modal-field-label">担当者</div><select id="modalAssignee">' + buildModalAssigneeSelect(task.assigneeId) + '</select></div>';
