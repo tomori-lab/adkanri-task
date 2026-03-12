@@ -385,6 +385,24 @@ async function handleUpdateDashboardTask(request, env) {
   local[id] = { ...(local[id] || {}), ...body };
   await saveDashboardLocal(env, local);
 
+  if (body.localStatus) {
+    const cfg = getChatworkConfig(env);
+    const cwStatus = body.localStatus === 'done' ? 'done' : 'open';
+    const roomId = body.roomId || local[id].roomId || DASHBOARD_ROOM_ID;
+    if (roomId) local[id].roomId = roomId;
+    await saveDashboardLocal(env, local);
+    try {
+      await fetch(
+        `https://api.chatwork.com/v2/rooms/${roomId}/tasks/${id}/status`,
+        {
+          method: 'PUT',
+          headers: { 'X-ChatWorkToken': cfg.apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `body=${cwStatus}`,
+        }
+      );
+    } catch (_) {}
+  }
+
   return jsonResponse({ ok: true });
 }
 

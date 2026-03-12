@@ -925,7 +925,13 @@ function setGenre(genre) { selectedGenre = genre; document.querySelectorAll(".ge
 function setPerson(id) { selectedPersonId = id; document.querySelectorAll(".person-btn").forEach(function(b) { var bid = b.dataset.id; b.classList.toggle("active", id === "all" ? bid === "all" : Number(bid) === id); }); loadAll(); }
 
 async function updateTask(id, field, value) { await apiCall("POST", "/api/dashboard/tasks/" + id, { [field]: value }); }
-function handleStatusChange(id, val) { updateTask(id, "localStatus", val); var t = allTasks.find(function(x) { return x.id === id; }); if (t) { t.localStatus = val; renderAll(); } }
+function handleStatusChange(id, val) {
+  var t = allTasks.find(function(x) { return x.id === id; });
+  var payload = { localStatus: val };
+  if (t && t.roomId) payload.roomId = t.roomId;
+  apiCall("POST", "/api/dashboard/tasks/" + id, payload);
+  if (t) { t.localStatus = val; renderAll(); }
+}
 function handleCategoryChange(id, val) { updateTask(id, "category", val); var t = allTasks.find(function(x) { return x.id === id; }); if (t) { t.category = val; renderAll(); } }
 
 function editTitle(id, btn) {
