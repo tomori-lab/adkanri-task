@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260312d -->
+<html lang="ja"><!-- v20260312e -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -204,6 +204,9 @@
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 640px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
   .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
   .modal-header h2 { font-size: 18px; font-weight: 700; flex: 1; margin-right: 12px; line-height: 1.4; }
+  .modal-title-editable { cursor: pointer; border-radius: 6px; padding: 2px 6px; margin: -2px -6px; transition: background .2s; }
+  .modal-title-editable:hover { background: var(--surface2); }
+  .modal-title-input { width: 100%; font-size: 18px; font-weight: 700; border: 1.5px solid var(--accent); border-radius: 8px; background: var(--surface2); color: var(--text); padding: 6px 10px; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
   .modal-close { background: transparent; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; transition: all .2s; }
   .modal-close:hover { background: var(--surface2); color: var(--text); }
   .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
@@ -425,7 +428,7 @@
 <div class="modal-overlay hidden" id="taskModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <h2 id="modalTitle"></h2>
+      <h2 id="modalTitle" class="modal-title-editable" onclick="editModalTitle()" title="クリックで編集"></h2>
       <button class="modal-close" onclick="closeModal()">&#10005;</button>
     </div>
     <div class="modal-body">
@@ -1141,6 +1144,26 @@ async function saveModalTask(id) {
   }
   await apiCall("POST", "/api/dashboard/tasks/" + id, updates);
   renderAll(); closeModal();
+}
+function editModalTitle() {
+  if (!currentModalId) return;
+  var h2 = document.getElementById("modalTitle");
+  var task = allTasks.find(function(t) { return t.id === currentModalId; });
+  if (!task) return;
+  var input = document.createElement("input");
+  input.type = "text"; input.value = task.title; input.className = "modal-title-input";
+  h2.replaceWith(input); input.focus(); input.select();
+  function save() {
+    var val = input.value.trim();
+    if (val && val !== task.title) { task.title = val; updateTask(currentModalId, "title", val); }
+    var newH2 = document.createElement("h2");
+    newH2.id = "modalTitle"; newH2.className = "modal-title-editable";
+    newH2.onclick = editModalTitle; newH2.title = "クリックで編集";
+    newH2.textContent = task.title;
+    input.replaceWith(newH2);
+  }
+  input.addEventListener("blur", save);
+  input.addEventListener("keydown", function(e) { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = task.title; input.blur(); } });
 }
 function closeModal() { document.getElementById("taskModal").classList.add("hidden"); currentModalId = null; }
 document.addEventListener("keydown", function(e) { if (e.key === "Escape" && currentModalId) closeModal(); });
