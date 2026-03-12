@@ -473,6 +473,8 @@ function decodeJwt(token) {
   return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
 }
 
+var silentRefreshInProgress = false;
+
 function isTokenExpired() {
   if (!authToken) return true;
   try { return Date.now() / 1000 > decodeJwt(authToken).exp - 60; } catch(e) { return true; }
@@ -483,13 +485,37 @@ function reAuthenticate() {
   if (typeof google !== "undefined" && google.accounts) google.accounts.id.prompt();
 }
 
+function trySilentRefresh() {
+  if (silentRefreshInProgress) return;
+  silentRefreshInProgress = true;
+  if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
+    google.accounts.id.prompt(function(notification) {
+      silentRefreshInProgress = false;
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        reAuthenticate();
+      }
+    });
+  } else {
+    silentRefreshInProgress = false;
+    reAuthenticate();
+  }
+}
+
 function apiCall(method, path, body) {
-  if (isTokenExpired()) { reAuthenticate(); return Promise.reject(new Error("ログインが必要です")); }
+  if (isTokenExpired()) {
+    var savedUser = localStorage.getItem("userInfo");
+    if (savedUser) {
+      trySilentRefresh();
+      return Promise.reject(new Error("トークン更新中"));
+    }
+    reAuthenticate();
+    return Promise.reject(new Error("ログインが必要です"));
+  }
   var opts = { method: method, headers: { "Authorization": "Bearer " + authToken, "Content-Type": "application/json" } };
   if (body && method !== "GET" && method !== "DELETE") opts.body = JSON.stringify(body);
   return fetch(API_BASE + path, opts).then(function(res) {
     return res.json().then(function(data) {
-      if (res.status === 401) { reAuthenticate(); throw new Error(data.error || "ログインが必要です"); }
+      if (res.status === 401) { trySilentRefresh(); throw new Error(data.error || "ログインが必要です"); }
       if (!res.ok) throw new Error(data.error || "エラーが発生しました");
       return data;
     });
@@ -500,6 +526,7 @@ function applyAuth(token) {
   authToken = token;
   var payload = decodeJwt(authToken);
   currentUser = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || null };
+  localStorage.setItem("userInfo", JSON.stringify(currentUser));
   document.getElementById("sidebarUser").textContent = currentUser.email;
   var avatar = document.getElementById("userAvatar");
   if (currentUser.picture) {
@@ -512,13 +539,13 @@ function applyAuth(token) {
 }
 
 function handleCredentialResponse(response) {
-  sessionStorage.setItem("authToken", response.credential);
+  localStorage.setItem("authToken", response.credential);
   applyAuth(response.credential);
   checkRole();
 }
 
 (function restoreSession() {
-  var saved = sessionStorage.getItem("authToken");
+  var saved = localStorage.getItem("authToken");
   if (saved) {
     try {
       var payload = decodeJwt(saved);
@@ -528,8 +555,24 @@ function handleCredentialResponse(response) {
         return;
       }
     } catch (_) {}
-    sessionStorage.removeItem("authToken");
   }
+  var savedUser = localStorage.getItem("userInfo");
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+      document.getElementById("sidebarUser").textContent = currentUser.email;
+      var avatar = document.getElementById("userAvatar");
+      if (currentUser.picture) {
+        avatar.innerHTML = '<img src="' + currentUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+      } else {
+        avatar.textContent = (currentUser.name || "?").charAt(0).toUpperCase();
+      }
+      avatar.title = currentUser.name;
+    } catch (_) {}
+    trySilentRefresh();
+    return;
+  }
+  reAuthenticate();
 })();
 
 async function checkRole() {
