@@ -774,9 +774,26 @@ async function sendDoneReplyMessage(taskId, roomId, replyMessage, readToken, sen
   const taskBody = task.body || '';
   const taskTitle = extractTitle(taskBody);
 
+  const requesterName = extractRequesterName(taskBody);
+  let requesterAid = null;
+  if (requesterName) {
+    try {
+      const membersRes = await fetch(
+        `https://api.chatwork.com/v2/rooms/${roomId}/members`,
+        { headers: { 'X-ChatWorkToken': readToken } }
+      );
+      if (membersRes.ok) {
+        const members = await membersRes.json();
+        const match = members.find((m) => requesterName.includes(m.name) || m.name.includes(requesterName));
+        if (match) requesterAid = match.account_id;
+      }
+    } catch (_) {}
+  }
+  const toAid = requesterAid || assignerAid;
+
   let msg = '';
-  if (assignerAid) {
-    msg += '[To:' + assignerAid + ']\n';
+  if (toAid) {
+    msg += '[To:' + toAid + ']\n';
   }
   msg += '\u2705\u30BF\u30B9\u30AF\u5B8C\u4E86\n';
   msg += '\u300C' + taskTitle + '\u300D\u3092\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002\n';
