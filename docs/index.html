@@ -678,6 +678,9 @@ function renderFormFields(fields) {
     var inputHtml;
     if (f.type === "select") {
       inputHtml = '<select id="input-' + f.id + '" data-label="' + f.label + '" data-required="' + f.required + '"><option value="">選択してください</option>' + f.options.map(function(o) { return '<option value="' + o + '">' + o + '</option>'; }).join("") + '</select>';
+    } else if (f.type === "sheet-select") {
+      inputHtml = '<select id="input-' + f.id + '" data-label="' + f.label + '" data-required="' + f.required + '"><option value="">読み込み中...</option></select>';
+      loadSheetOptions(f.sheetId, f.sheetRange, "input-" + f.id);
     } else if (f.type === "textarea") {
       inputHtml = '<textarea id="input-' + f.id + '" data-label="' + f.label + '" data-required="' + f.required + '" placeholder="' + f.label + 'を入力"></textarea>';
     } else {
@@ -686,6 +689,19 @@ function renderFormFields(fields) {
     div.innerHTML = '<label for="input-' + f.id + '">' + f.label + (f.required ? '<span class="required">*</span>' : "") + '</label>' + inputHtml;
     container.appendChild(div);
   });
+}
+
+function loadSheetOptions(sheetId, range, selectId) {
+  apiCall("GET", "/api/sheet-options?id=" + encodeURIComponent(sheetId) + "&range=" + encodeURIComponent(range))
+    .then(function(options) {
+      var sel = document.getElementById(selectId);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">選択してください</option>' + options.map(function(o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join("");
+    })
+    .catch(function() {
+      var sel = document.getElementById(selectId);
+      if (sel) sel.innerHTML = '<option value="">取得失敗 - 手動入力してください</option>';
+    });
 }
 
 function handleRequestSubmit() {

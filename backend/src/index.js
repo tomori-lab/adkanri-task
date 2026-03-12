@@ -39,6 +39,10 @@ export default {
       } else if (/^\/api\/dashboard\/manual-tasks\/[^/]+$/.test(path) && request.method === 'DELETE') {
         response = await handleDeleteManualTask(request, env);
       }
+      // ── スプレッドシート連携 ──
+      else if (path === '/api/sheet-options' && request.method === 'GET') {
+        response = await handleGetSheetOptions(request, env);
+      }
       // ── 権限管理 ──
       else if (path === '/api/role' && request.method === 'POST') {
         response = await handleCheckRole(request, env);
@@ -458,6 +462,89 @@ async function handleUpdateAdminRoles(request, env) {
 
   await saveAdminRoles(env, { admins: admins.map((e) => e.trim().toLowerCase()) });
   return jsonResponse({ ok: true });
+}
+
+// ====================================================
+// ハンドラ: スプレッドシート連携
+// ====================================================
+
+async function handleGetSheetOptions(request, env) {
+  await verifyGoogleToken(request, env);
+
+  const url = new URL(request.url);
+  const spreadsheetId = url.searchParams.get('id');
+  const range = url.searchParams.get('range');
+  if (!spreadsheetId || !range) {
+    return jsonResponse({ error: 'id and range required' }, 400);
+  }
+
+  const cacheKey = `SHEET_CACHE_${spreadsheetId}_${range}`;
+  const cached = await env.TASK_STORE.get(cacheKey);
+  if (cached) {
+    const parsed = JSON.parse(cached);
+    if (Date.now() - parsed.ts < 300000) return jsonResponse(parsed.data);
+  }
+
+  const accessToken = await getGoogleAccessToken(env);
+  const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
+  const res = await fetch(apiUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) {
+    const err = await res.text();
+    return jsonResponse({ error: 'Sheets API error', detail: err }, res.status);
+  }
+
+  const data = await res.json();
+  const values = (data.values || []).flat().filter((v) => v && String(v).trim());
+  const unique = [...new Set(values)];
+
+  await env.TASK_STORE.put(cacheKey, JSON.stringify({ ts: Date.now(), data: unique }));
+  return jsonResponse(unique);
+}
+
+function base64url(buf) {
+  const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : buf;
+  let str = '';
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function getGoogleAccessToken(env) {
+  const sa = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_KEY);
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  })));
+
+  const signingInput = `${header}.${payload}`;
+
+  const pemContents = sa.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\n/g, '');
+  const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signingInput));
+  const jwt = `${signingInput}.${base64url(signature)}`;
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) throw new Error('Failed to get Google access token');
+  return tokenData.access_token;
 }
 
 // ====================================================
