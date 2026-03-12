@@ -474,11 +474,14 @@ async function handleGetSheetOptions(request, env) {
   const url = new URL(request.url);
   const spreadsheetId = url.searchParams.get('id');
   const range = url.searchParams.get('range');
+  const condRange = url.searchParams.get('condRange');
+  const condValue = url.searchParams.get('condValue');
+  const condReplace = url.searchParams.get('condReplace');
   if (!spreadsheetId || !range) {
     return jsonResponse({ error: 'id and range required' }, 400);
   }
 
-  const cacheKey = `SHEET_CACHE_${spreadsheetId}_${range}`;
+  const cacheKey = `SHEET_CACHE_${spreadsheetId}_${range}_${condRange || ''}_${condValue || ''}`;
   const cached = await env.TASK_STORE.get(cacheKey);
   if (cached) {
     const parsed = JSON.parse(cached);
@@ -486,16 +489,35 @@ async function handleGetSheetOptions(request, env) {
   }
 
   const accessToken = await getGoogleAccessToken(env);
-  const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
-  const res = await fetch(apiUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!res.ok) {
-    const err = await res.text();
-    return jsonResponse({ error: 'Sheets API error', detail: err }, res.status);
-  }
 
-  const data = await res.json();
-  const values = (data.values || []).flat().filter((v) => v && String(v).trim());
-  const unique = [...new Set(values)];
+  let unique;
+  if (condRange && condValue) {
+    const [mainRes, condRes] = await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(condRange)}`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+    ]);
+    if (!mainRes.ok || !condRes.ok) return jsonResponse({ error: 'Sheets API error' }, 500);
+    const mainData = await mainRes.json();
+    const condData = await condRes.json();
+    const mainVals = (mainData.values || []).map((r) => (r[0] || '').trim());
+    const condVals = (condData.values || []).map((r) => (r[0] || '').trim());
+    const merged = [];
+    for (let i = 0; i < mainVals.length; i++) {
+      const val = condVals[i] === condValue ? (condReplace || condValue) : mainVals[i];
+      if (val) merged.push(val);
+    }
+    unique = [...new Set(merged)];
+  } else {
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
+    const res = await fetch(apiUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      const err = await res.text();
+      return jsonResponse({ error: 'Sheets API error', detail: err }, res.status);
+    }
+    const data = await res.json();
+    const values = (data.values || []).flat().filter((v) => v && String(v).trim());
+    unique = [...new Set(values)];
+  }
 
   await env.TASK_STORE.put(cacheKey, JSON.stringify({ ts: Date.now(), data: unique }));
   return jsonResponse(unique);
