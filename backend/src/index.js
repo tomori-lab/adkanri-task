@@ -787,16 +787,16 @@ async function sendChatworkTask(formData, reqId, env) {
         `https://api.chatwork.com/v2/rooms/${DASHBOARD_ROOM_ID}/messages?force=1`,
         { headers: { 'X-ChatWorkToken': cfg.apiToken } }
       );
-      let replyTag = '';
+      let quoteBlock = '';
       if (msgsRes.ok) {
         const msgs = await msgsRes.json();
         if (Array.isArray(msgs) && msgs.length > 0) {
           const taskMsg = msgs[msgs.length - 1];
-          replyTag = '[rp aid=' + taskMsg.account.account_id + ' to=' + DASHBOARD_ROOM_ID + '-' + taskMsg.message_id + ']\n';
+          quoteBlock = '[qt][qtmeta aid=' + taskMsg.account.account_id + ' time=' + taskMsg.send_time + ']' + taskMsg.body + '[/qt]';
         }
       }
       const toMentions = NOTIFY_MEMBERS.map((m) => '[To:' + m.id + ']' + m.name + '\u3055\u3093').join('\n');
-      let notifyBody = toMentions + '\n\n\u4E0B\u8A18\u30BF\u30B9\u30AF\u306E\u5BFE\u5FDC\u304A\u9858\u3044\u3057\u307E\u3059\u3002\n\n' + replyTag;
+      let notifyBody = toMentions + '\n\n\u4E0B\u8A18\u30BF\u30B9\u30AF\u306E\u5BFE\u5FDC\u304A\u9858\u3044\u3057\u307E\u3059\u3002\n\n' + quoteBlock;
       await fetch(`https://api.chatwork.com/v2/rooms/${DASHBOARD_ROOM_ID}/messages`, {
         method: 'POST',
         headers: { 'X-ChatWorkToken': cfg.apiToken, 'Content-Type': 'application/x-www-form-urlencoded' },
