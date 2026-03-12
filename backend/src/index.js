@@ -668,7 +668,6 @@ async function sendChatworkTask(formData, reqId, env) {
   }
 
   const infoBlock = '\n\n\u3010' + subLabel + '\u3011\n[info]\n\u4F9D\u983C\u8005\uFF1A' + formData.name
-    + '\n\u5927\u5206\u985E\uFF1A' + formData.category
     + (formData.subCategory ? '\n\u5C0F\u5206\u985E\uFF1A' + formData.subCategory : '')
     + (fieldLines.length ? '\n' + fieldLines.join('\n') : '')
     + '\n[/info]';
