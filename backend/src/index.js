@@ -773,17 +773,16 @@ async function sendDoneReplyMessage(taskId, roomId, replyMessage, apiToken) {
   const taskBody = task.body || '';
   const taskTitle = extractTitle(taskBody);
 
-  let msg = '[info][title]\u2705 \u30BF\u30B9\u30AF\u5B8C\u4E86[/title]';
-  msg += '\u30BF\u30B9\u30AF\u300C' + taskTitle + '\u300D\u3092\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002\n';
+  let msg = '';
+  if (assignerAid) {
+    msg += '[To:' + assignerAid + ']\n';
+  }
+  msg += '\u2705\u30BF\u30B9\u30AF\u5B8C\u4E86\n';
+  msg += '\u300C' + taskTitle + '\u300D\u3092\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002\n';
   if (replyMessage) {
-    msg += '\n\u25A0 \u30B3\u30E1\u30F3\u30C8\n' + replyMessage + '\n';
+    msg += '\n' + replyMessage + '\n';
   }
   msg += '\n[hr]\n' + taskBody.slice(0, 500);
-  msg += '[/info]';
-
-  if (assignerAid) {
-    msg = '[To:' + assignerAid + ']\n' + msg;
-  }
 
   await fetch(
     `https://api.chatwork.com/v2/rooms/${roomId}/messages`,
