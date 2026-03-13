@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260312g -->
+<html lang="ja"><!-- v20260313a -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -858,19 +858,22 @@ function resetRequestForm() {
 // ============================
 // My Requests
 // ============================
+var myRequestsData = [];
+
 async function loadMyRequests() {
   var area = document.getElementById("myRequestsArea");
   area.innerHTML = '<div class="empty-state">読み込み中...</div>';
   try {
     var tasks = await apiCall("GET", "/api/my-requests");
-    if (!Array.isArray(tasks) || tasks.length === 0) {
+    myRequestsData = Array.isArray(tasks) ? tasks : [];
+    if (myRequestsData.length === 0) {
       area.innerHTML = '<div class="empty-state">依頼はまだありません</div>';
       return;
     }
     function statusClass(s) { return s === "完了" ? "done" : s === "着手中" ? "progress" : s === "相手待ち" ? "waiting" : "pending"; }
     var html = '<table class="req-table"><thead><tr><th>内容</th><th>依頼者</th><th>担当</th><th>日付</th><th>進捗</th></tr></thead><tbody>';
-    tasks.forEach(function(t) {
-      html += '<tr>';
+    myRequestsData.forEach(function(t, idx) {
+      html += '<tr style="cursor:pointer;" onclick="openRequestModal(' + idx + ')">';
       html += '<td>' + esc(t.category) + (t.subCategory ? " / " + esc(t.subCategory) : "") + '</td>';
       html += '<td>' + esc(t.requester || "-") + '</td>';
       html += '<td>' + esc(t.assignee || "-") + '</td>';
@@ -883,6 +886,30 @@ async function loadMyRequests() {
   } catch (err) {
     area.innerHTML = '<div class="empty-state">読み込みに失敗しました: ' + esc(err.message) + "</div>";
   }
+}
+
+function openRequestModal(idx) {
+  var t = myRequestsData[idx];
+  if (!t) return;
+  currentModalId = null;
+  setModalTitle(t.title || t.category, true);
+
+  var metaHtml = '<span>' + esc(t.category) + (t.subCategory ? ' / ' + esc(t.subCategory) : '') + '</span>';
+  metaHtml += '<span>' + esc(t.status || '未着手') + '</span>';
+  metaHtml += '<span>' + esc(t.createdAt || '') + '</span>';
+  document.getElementById("modalMeta").innerHTML = metaHtml;
+
+  var bodyHtml = '<div class="modal-field-row">';
+  bodyHtml += '<div class="modal-field"><div class="modal-field-label">依頼者</div><div style="padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:14px;">' + esc(t.requester || '-') + '</div></div>';
+  bodyHtml += '<div class="modal-field"><div class="modal-field-label">担当者</div><div style="padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:14px;">' + esc(t.assignee || '-') + '</div></div>';
+  bodyHtml += '</div>';
+
+  bodyHtml += '<div class="modal-field-label" style="margin-bottom:6px;">タスク内容</div>';
+  bodyHtml += '<div class="modal-task-body">' + esc(t.body || '(内容なし)') + '</div>';
+
+  document.getElementById("modalBody").innerHTML = bodyHtml;
+  document.getElementById("modalActions").innerHTML = '';
+  document.getElementById("taskModal").classList.remove("hidden");
 }
 
 // ============================

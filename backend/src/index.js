@@ -250,8 +250,9 @@ async function handleGetMyRequests(request, env) {
       subCategory: subMatch ? subMatch[1].trim() : '',
       status: displayStatus,
       requester: reqName,
-      assignee: t.account ? t.account.name : '',
+      assignee: meta.assigneeName || (t.account ? t.account.name : ''),
       createdAt: t.limit_time ? new Date(t.limit_time * 1000).toISOString().slice(0, 10) : '-',
+      body: body.replace(/\[.*?\]/g, '').trim(),
     });
   }
 
@@ -1145,6 +1146,7 @@ async function checkOverdueTasks(env) {
   const todayMs = new Date(todayStr).getTime();
   const THREE_DAYS_MS = 3 * 24 * 3600000;
   const overdueItems = [];
+  const memberIds = DEFAULT_PEOPLE.map((p) => p.id);
 
   const rooms = new Set();
   rooms.add(DASHBOARD_ROOM_ID);
@@ -1159,6 +1161,8 @@ async function checkOverdueTasks(env) {
       const tasks = await res.json();
       for (const t of tasks) {
         const meta = local[t.task_id] || {};
+        const effectiveAssigneeId = meta.assigneeId || (t.account && t.account.account_id);
+        if (!memberIds.includes(effectiveAssigneeId)) continue;
         if (meta.localStatus === 'done') continue;
         const limitDate = t.limit_time ? new Date(t.limit_time * 1000).toISOString().slice(0, 10) : null;
         const effectiveLimit = meta.limit || limitDate;
