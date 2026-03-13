@@ -1137,8 +1137,15 @@ async function checkOverdueTasks(env) {
         const diffMs = todayMs - new Date(effectiveLimit).getTime();
         if (diffMs >= THREE_DAYS_MS) {
           const daysOver = Math.floor(diffMs / (24 * 3600000));
+          const taskTitle = meta.title || extractTitle(t.body);
+          const body = (t.body || '').replace(/\[.*?\]/g, '');
+          const reqName = (body.match(/氏名[：:](.+)/) || body.match(/依頼者[：:](.+)/) || [])[1];
+          const project = (body.match(/案件[：:](.+)/) || body.match(/案件名[：:](.+)/) || [])[1];
+          let detail = taskTitle;
+          if (project) detail += ' / ' + project.trim().slice(0, 30);
+          if (reqName) detail += '（' + reqName.trim() + '）';
           overdueItems.push({
-            title: (t.body || '').split('\n')[0].replace(/\[.*?\]/g, '').trim().slice(0, 60),
+            title: detail.slice(0, 80),
             assignee: meta.assigneeName || (t.account && t.account.name) || '不明',
             deadline: effectiveLimit,
             daysOver: daysOver,
