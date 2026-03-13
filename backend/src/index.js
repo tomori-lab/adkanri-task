@@ -878,13 +878,29 @@ function autoCategory(body) {
 
 function extractTitle(body) {
   const b = (body || '').replace(/\[.*?\]/g, '');
-  const patterns = [/案件名[：:](.+)/, /【(.+?)】/, /▼(.+)/, /依頼内容（小分類）[：:](.+)/];
-  for (const p of patterns) {
-    const m = b.match(p);
-    if (m) return m[1].trim().slice(0, 40);
-  }
-  const first = b.trim().split('\n').find((l) => l.trim().length > 0);
-  return first ? first.trim().slice(0, 40) : '無題';
+
+  const subCat = (b.match(/依頼内容（小分類）[：:](.+)/) || b.match(/小分類[：:](.+)/) || [])[1];
+  const mainCat = (b.match(/依頼内容（大分類）[：:](.+)/) || b.match(/大分類[：:](.+)/) || [])[1];
+  const project = (b.match(/案件[：:](.+)/) || b.match(/案件名[：:](.+)/) || [])[1];
+  const account = (b.match(/アカウント名[：:](.+)/) || b.match(/アカウント[：:](.+)/) || [])[1];
+
+  const parts = [];
+  if (subCat) parts.push(subCat.trim());
+  else if (mainCat) parts.push(mainCat.trim());
+
+  if (project) parts.push(project.trim());
+  else if (account) parts.push(account.trim());
+
+  if (parts.length > 0) return parts.join(' / ').slice(0, 60);
+
+  const bracketMatch = b.match(/【(.+?)】/);
+  if (bracketMatch) return bracketMatch[1].trim().slice(0, 40);
+
+  const lines = b.trim().split('\n').filter((l) => {
+    const lt = l.trim();
+    return lt.length > 0 && !/^依頼がきました/.test(lt) && !/^対応お願い/.test(lt) && !/^営業時間外/.test(lt);
+  });
+  return lines.length > 0 ? lines[0].trim().slice(0, 50) : '無題';
 }
 
 async function sendDoneReplyMessage(taskId, roomId, replyMessage, readToken, sendToken) {
@@ -1139,11 +1155,9 @@ async function checkOverdueTasks(env) {
           const daysOver = Math.floor(diffMs / (24 * 3600000));
           const taskTitle = meta.title || extractTitle(t.body);
           const body = (t.body || '').replace(/\[.*?\]/g, '');
-          const reqName = (body.match(/氏名[：:](.+)/) || body.match(/依頼者[：:](.+)/) || [])[1];
           const project = (body.match(/案件[：:](.+)/) || body.match(/案件名[：:](.+)/) || [])[1];
           let detail = taskTitle;
           if (project) detail += ' / ' + project.trim().slice(0, 30);
-          if (reqName) detail += '（' + reqName.trim() + '）';
           overdueItems.push({
             title: detail.slice(0, 80),
             assignee: meta.assigneeName || (t.account && t.account.name) || '不明',
