@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260313a -->
+<html lang="ja"><!-- v20260313b -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -81,15 +81,40 @@
   .reload-btn:not(:disabled):active .reload-icon { transform: rotate(360deg); }
   .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: default; }
 
+  .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .dash-header h2 { font-size: 20px; font-weight: 800; }
+  .dash-header .dash-time { font-size: 12px; color: var(--text2); }
+
+  .dash-stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .dash-stat { flex: 1; min-width: 100px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; text-align: center; }
+  .dash-stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 600; }
+  .dash-stat-value { font-size: 26px; font-weight: 800; }
+  .dash-stat-value.blue { color: var(--accent); }
+  .dash-stat-value.gray { color: var(--text2); }
+  .dash-stat-value.orange { color: var(--yellow); }
+  .dash-stat-value.green { color: var(--green); }
+  .dash-stat-value.red { color: var(--red); }
+
+  .dash-deadlines { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+  .dash-deadlines .dl-label { font-size: 12px; color: var(--text2); font-weight: 600; margin-right: 4px; }
+  .dash-dl-badge { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  .dash-dl-badge.overdue { border-color: var(--red); color: var(--red); background: rgba(239,68,68,.08); }
+
+  .dash-members-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
   .summary-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-  .summary-card { flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
-  .summary-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
-  .summary-card .summary-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .summary-card { flex: 1; min-width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+  .summary-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+  .summary-card .summary-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
   .summary-card .summary-count { font-size: 28px; font-weight: 800; color: var(--accent); }
   .summary-card .summary-count span { font-size: 13px; font-weight: 500; color: var(--text2); margin-left: 2px; }
   .summary-card .summary-bar { position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 12px 12px; }
-  .summary-detail { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-  .summary-detail .sd-item { font-size: 11px; color: var(--text2); }
+  .summary-detail { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .sd-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+  .sd-chip.open { background: rgba(156,163,175,.15); color: var(--text2); }
+  .sd-chip.ip { background: rgba(59,130,246,.12); color: var(--accent); }
+  .sd-chip.wait { background: rgba(234,179,8,.12); color: var(--yellow); }
+  .sd-chip.done { background: rgba(34,197,94,.12); color: var(--green); }
 
   .panel { display: none; flex: 1; overflow-y: auto; }
   .panel.active { display: block; }
@@ -1610,20 +1635,57 @@ function renderAll() {
   if (selectedPersonId === "all" && !isManualGenre && selectedGenre === "all") {
     var people = peopleData.length > 0 ? peopleData : [{ name: "\u7B52\u4E95", id: 0 }, { name: "\u53CB\u5229", id: 0 }, { name: "\u77F3\u7530", id: 0 }, { name: "\u897F\u6751", id: 0 }];
     var chatworkTasks = allTasks.filter(function(t) { return !t.isManual; });
+    var totalAll = chatworkTasks.length;
+    var totalOpen = chatworkTasks.filter(function(t) { return t.localStatus === "open"; }).length;
+    var totalIp = chatworkTasks.filter(function(t) { return t.localStatus === "in_progress"; }).length;
+    var totalWait = chatworkTasks.filter(function(t) { return t.localStatus === "waiting"; }).length;
+    var totalDone = chatworkTasks.filter(function(t) { return t.localStatus === "done"; }).length;
+
+    var todayDue = 0, tmrwDue = 0, weekDue = 0, overdue = 0;
+    chatworkTasks.forEach(function(t) {
+      if (t.localStatus === "done") return;
+      if (!t.limit) return;
+      var diff = Math.round((new Date(t.limit) - new Date(today())) / 86400000);
+      if (diff < 0) overdue++;
+      else if (diff === 0) todayDue++;
+      else if (diff === 1) tmrwDue++;
+      else if (diff <= 7) weekDue++;
+    });
+
+    html += '<div class="dash-header"><h2>\u30C0\u30C3\u30B7\u30E5\u30DC\u30FC\u30C9</h2><div class="dash-time" id="lastUpdated2">\u26F1 ' + new Date().toLocaleTimeString("ja-JP") + '</div></div>';
+
+    html += '<div class="dash-stats">';
+    html += '<div class="dash-stat"><div class="dash-stat-label">\u5168\u30BF\u30B9\u30AF</div><div class="dash-stat-value blue">' + totalAll + '</div></div>';
+    html += '<div class="dash-stat"><div class="dash-stat-label">\u672A\u7740\u624B</div><div class="dash-stat-value gray">' + totalOpen + '</div></div>';
+    html += '<div class="dash-stat"><div class="dash-stat-label">\u7740\u624B\u4E2D</div><div class="dash-stat-value orange">' + totalIp + '</div></div>';
+    html += '<div class="dash-stat"><div class="dash-stat-label">\u76F8\u624B\u5F85\u3061</div><div class="dash-stat-value orange">' + totalWait + '</div></div>';
+    html += '<div class="dash-stat"><div class="dash-stat-label">\u5B8C\u4E86</div><div class="dash-stat-value green">' + totalDone + '</div></div>';
+    html += '</div>';
+
+    html += '<div class="dash-deadlines"><span class="dl-label">\u671F\u9650\uFF1A</span>';
+    html += '<span class="dash-dl-badge">\u4ECA\u65E5\u671F\u9650 ' + todayDue + '</span>';
+    html += '<span class="dash-dl-badge">\u660E\u65E5\u671F\u9650 ' + tmrwDue + '</span>';
+    html += '<span class="dash-dl-badge">\u4ECA\u9031\u671F\u9650 ' + weekDue + '</span>';
+    html += '<span class="dash-dl-badge' + (overdue > 0 ? ' overdue' : '') + '">\u671F\u9650\u5207\u308C ' + overdue + '</span>';
+    html += '</div>';
+
+    html += '<div class="dash-members-title">\u62C5\u5F53\u8005\u5225\u30BF\u30B9\u30AF</div>';
     html += '<div class="summary-row">';
     people.forEach(function(p) {
       var pTasks = chatworkTasks.filter(function(t) { return String(t.assigneeId) === String(p.id); });
       var openCount = pTasks.filter(function(t) { return t.localStatus === "open"; }).length;
       var ipCount = pTasks.filter(function(t) { return t.localStatus === "in_progress"; }).length;
       var waitCount = pTasks.filter(function(t) { return t.localStatus === "waiting"; }).length;
+      var doneCount = pTasks.filter(function(t) { return t.localStatus === "done"; }).length;
       var color = PERSON_COLORS[p.name] || "var(--accent)";
       html += '<div class="summary-card" onclick="setPerson(' + p.id + ')">';
       html += '<div class="summary-name">' + esc(p.name) + '</div>';
-      html += '<div class="summary-count">' + pTasks.length + '<span>件</span></div>';
+      html += '<div class="summary-count">' + pTasks.length + '<span>\u4EF6</span></div>';
       html += '<div class="summary-detail">';
-      if (openCount) html += '<span class="sd-item">未着手 ' + openCount + '</span>';
-      if (ipCount) html += '<span class="sd-item">着手中 ' + ipCount + '</span>';
-      if (waitCount) html += '<span class="sd-item">相手待ち ' + waitCount + '</span>';
+      html += '<span class="sd-chip open">\u672A\u7740\u624B ' + openCount + '</span>';
+      html += '<span class="sd-chip ip">\u7740\u624B\u4E2D ' + ipCount + '</span>';
+      html += '<span class="sd-chip wait">\u76F8\u624B\u5F85\u3061 ' + waitCount + '</span>';
+      html += '<span class="sd-chip done">\u5B8C\u4E86 ' + doneCount + '</span>';
       html += '</div>';
       html += '<div class="summary-bar" style="width:100%;background:' + color + ';"></div>';
       html += '</div>';
