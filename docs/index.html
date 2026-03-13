@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><!-- v20260313b -->
+<html lang="ja"><!-- v20260313c -->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1718,12 +1718,12 @@ function renderAll() {
       var hi = active.filter(function(t) { return t.priority === "high"; });
       var md = active.filter(function(t) { return t.priority === "medium" || !t.priority; });
       var lo = active.filter(function(t) { return t.priority === "low"; });
-      html = [renderSection("高", hi, "var(--red)"), renderSection("中", md, "var(--yellow)"), renderSection("低", lo, "var(--text2)"), done.length ? renderSection("完了", done, "var(--green)") : ""].join("");
+      html += [renderSection("高", hi, "var(--red)"), renderSection("中", md, "var(--yellow)"), renderSection("低", lo, "var(--text2)"), done.length ? renderSection("完了", done, "var(--green)") : ""].join("");
     } else {
       var o = tasksToShow.filter(function(t) { return t.localStatus === "open"; }); o.sort(ps);
       var ip = tasksToShow.filter(function(t) { return t.localStatus === "in_progress"; }); ip.sort(ps);
       var w = tasksToShow.filter(function(t) { return t.localStatus === "waiting"; }); w.sort(ps);
-      html = [renderSection("未着手", o, "var(--text2)"), renderSection("着手中", ip, "var(--accent)"), renderSection("相手待ち", w, "var(--yellow)"), done.length ? renderSection("完了", done, "var(--green)") : ""].join("");
+      html += [renderSection("未着手", o, "var(--text2)"), renderSection("着手中", ip, "var(--accent)"), renderSection("相手待ち", w, "var(--yellow)"), done.length ? renderSection("完了", done, "var(--green)") : ""].join("");
     }
   }
 
