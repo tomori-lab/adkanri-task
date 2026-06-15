@@ -3990,8 +3990,17 @@ function openLongTermModal(id) {
 
 function updateLongTermField(id, field, val) {
   var t = allTasks.find(function(x) { return x.id === id; });
-  if (t) t[field] = val;
-  dashUpdate(id, { [field]: val });
+  if (!t) return;
+  t[field] = val;
+  var payload = { [field]: val };
+  if (field === "status" && val === "done") {
+    t.doneDate = today();
+    payload.doneDate = today();
+  } else if (field === "status" && val !== "done") {
+    t.doneDate = null;
+    payload.doneDate = null;
+  }
+  dashUpdate(id, payload);
 }
 
 function showLongTermDeadlinePicker(id, el) {
@@ -4128,6 +4137,8 @@ function renderAll() {
 
   var _td = today();
   var tasksToShow = allTasks.filter(function(t) {
+    // 手動タスク（定期・長期）は完了フィルタをスキップ（常に表示）
+    if (t.isManual && (normalizeCategory(t.category) === "long_term" || normalizeCategory(t.category) === "teiki")) return true;
     // 完了タスクはdoneDate=今日のみ表示、それ以外は除外
     if ((t.localStatus === "done" || t.status === "done") && t.doneDate !== _td) return false;
     return true;
