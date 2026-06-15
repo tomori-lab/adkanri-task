@@ -659,7 +659,10 @@ async function handleGetDashboardTasks(request, env) {
   const manualTasks = await getManualTasks(env);
   for (const mt of manualTasks) {
     if (accountId !== null && Number(mt.assigneeId) !== accountId) continue;
-    allTasksList.push({ ...mt, isFromForm: false });
+    // status と localStatus を同期
+    const localStatus = mt.localStatus || mt.status || 'open';
+    const status = mt.status || mt.localStatus || 'open';
+    allTasksList.push({ ...mt, status, localStatus, isFromForm: false });
   }
 
   return jsonResponse(allTasksList);

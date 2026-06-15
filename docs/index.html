@@ -3993,12 +3993,17 @@ function updateLongTermField(id, field, val) {
   if (!t) return;
   t[field] = val;
   var payload = { [field]: val };
-  if (field === "status" && val === "done") {
-    t.doneDate = today();
-    payload.doneDate = today();
-  } else if (field === "status" && val !== "done") {
-    t.doneDate = null;
-    payload.doneDate = null;
+  if (field === "status") {
+    // status と localStatus の両方を同期させる
+    t.localStatus = val;
+    payload.localStatus = val;
+    if (val === "done") {
+      t.doneDate = today();
+      payload.doneDate = today();
+    } else {
+      t.doneDate = null;
+      payload.doneDate = null;
+    }
   }
   dashUpdate(id, payload);
 }
