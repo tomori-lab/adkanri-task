@@ -568,7 +568,8 @@ async function handleGetDashboardTasks(request, env) {
       seen.add(t.id);
       const meta = local[t.id] || {};
       const title = meta.title || extractTitle(t.body);
-      const category = meta.category || autoCategory(t.body);
+      const rawCategory = meta.category || autoCategory(t.body);
+      const category = (rawCategory === 'teiki' || rawCategory === 'long_term') ? autoCategory(t.body) : rawCategory;
       if (!local[t.id]) local[t.id] = {};
       if (!meta.title) { local[t.id].title = title; localChanged = true; }
       // Chatworkの担当者が変わったらKVも更新（アプリで手動変更した場合はmeta._assigneeOverride=trueで保護）
@@ -1647,7 +1648,6 @@ function autoCategory(body) {
   if (/スプシ|シート/.test(b)) return 'sheet';
   if (/数字合わせ|数値確認/.test(b)) return 'number_match';
   if (/ASP/.test(b)) return 'asp';
-  if (/定期|月末|月初/.test(b)) return 'teiki';
   return 'other';
 }
 

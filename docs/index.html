@@ -4154,8 +4154,11 @@ function renderAll() {
       return true;
     });
   }
-  if (GENRE_MAP[selectedGenre]) tasksToShow = tasksToShow.filter(function(t) { return normalizeCategory(t.category) === GENRE_MAP[selectedGenre]; });
-  if (!isManualGenre) tasksToShow = tasksToShow.filter(function(t) { var c = normalizeCategory(t.category); return c !== "teiki" && c !== "long_term"; });
+  if (GENRE_MAP[selectedGenre]) tasksToShow = tasksToShow.filter(function(t) {
+    if (selectedGenre === "teiki" || selectedGenre === "long_term") return !!t.isManual && normalizeCategory(t.category) === GENRE_MAP[selectedGenre];
+    return normalizeCategory(t.category) === GENRE_MAP[selectedGenre];
+  });
+  if (!isManualGenre) tasksToShow = tasksToShow.filter(function(t) { var c = normalizeCategory(t.category); return !t.isManual && c !== "teiki" && c !== "long_term"; });
   if (filterByDate) tasksToShow = tasksToShow.filter(function(t) { return t.limit === filterByDate; });
   if (filterByDueRange) tasksToShow = tasksToShow.filter(function(t) { return matchesDueRange(t, filterByDueRange); });
   if (manualFilter.priority) tasksToShow = tasksToShow.filter(function(t) { return (t.priority || "medium") === manualFilter.priority; });
