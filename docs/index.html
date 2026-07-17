@@ -4720,7 +4720,9 @@ function buildMorningReport(skipHInputs) {
   });
 
   data.todayOrOverdue.forEach(function(t) {
-    if (t.localStatus === "waiting") return;
+    // 待ちタスクも当日期限の場合は、予定タスクとして各カテゴリに表示する。
+    // 当日期限以外の待ちタスクは、従来どおり下の「待ちタスク」欄のみに表示する。
+    if (t.localStatus === "waiting" && t.limit !== td) return;
     var cat = normalizeCategory(t.category);
     var mapped = REPORT_CATS.some(function(c) { return c.key === cat; }) ? cat : "other";
     if (mapped === "teiki" || mapped === "long_term") mapped = "other";
@@ -4867,7 +4869,7 @@ function buildEveningReport() {
   function stIcon(st) {
     if (st === "done") return "\u2705";
     if (st === "in_progress") return "\uD83D\uDD3C";
-    if (st === "waiting") return "\u23F3";
+    if (st === "waiting") return "\u231B\uFE0F";
     return "\u274C";
   }
 
@@ -4939,8 +4941,10 @@ function buildEveningReport() {
     if (morningReportIds[t.id]) return;
     if (sashiIds[t.id]) return;
     var st = t.localStatus || t.status || "open";
-    // 差し込み = 出勤報告になくて今日完了したタスクのみ
-    if (st !== "done" || t.doneDate !== td) return;
+    // 差し込み = 出勤報告になくて今日完了したタスク、または退勤時点で待ちのタスク
+    var doneToday = st === "done" && t.doneDate === td;
+    var waitingAfterMorning = st === "waiting";
+    if (!doneToday && !waitingAfterMorning) return;
     sashikomi.push({ id: t.id, title: t.title, status: st });
     sashiIds[t.id] = true;
   });
